@@ -2576,7 +2576,7 @@
 
 "@uniswap/sdk@git+https://github.com/mathwallet/sdk-core.git#1.0.0":
   version "1.0.0"
-  resolved "git+https://github.com/mathwallet/sdk-core.git#457d29df0d729c042217c5b11cda3f30ac9f7d04"
+  resolved "git+https://github.com/mathwallet/sdk-core.git#5d6d660c526b3bb3ab3442b2297c11973523be44"
   dependencies:
     "@uniswap/v2-core" "^1.0.0"
     big.js "^5.2.2"
