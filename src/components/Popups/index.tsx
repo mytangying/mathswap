@@ -1,6 +1,5 @@
 import React from 'react'
 import styled from 'styled-components'
-import { useMediaLayout } from 'use-media'
 import { useActivePopups } from '../../state/application/hooks'
 import { AutoColumn } from '../Column'
 import PopupItem from './PopupItem'
@@ -11,6 +10,11 @@ const MobilePopupWrapper = styled.div<{ height: string | number }>`
   height: ${({ height }) => height};
   margin: ${({ height }) => (height ? '0 auto;' : 0)};
   margin-bottom: ${({ height }) => (height ? '20px' : 0)}};
+
+  display: none;
+  ${({ theme }) => theme.mediaWidth.upToSmall`
+    display: block;
+  `};
 `
 
 const MobilePopupInner = styled.div`
@@ -26,11 +30,12 @@ const MobilePopupInner = styled.div`
 `
 
 const FixedPopupColumn = styled(AutoColumn)`
-  position: absolute;
-  top: 112px;
+  position: fixed;
+  top: 64px;
   right: 1rem;
   max-width: 355px !important;
   width: 100%;
+  z-index: 2;
 
   ${({ theme }) => theme.mediaWidth.upToSmall`
     display: none;
@@ -41,30 +46,23 @@ export default function Popups() {
   // get all popups
   const activePopups = useActivePopups()
 
-  // switch view settings on mobile
-  const isMobile = useMediaLayout({ maxWidth: '600px' })
-
-  if (!isMobile) {
-    return (
+  return (
+    <>
       <FixedPopupColumn gap="20px">
         {activePopups.map(item => (
-          <PopupItem key={item.key} content={item.content} popKey={item.key} />
+          <PopupItem key={item.key} content={item.content} popKey={item.key} removeAfterMs={item.removeAfterMs} />
         ))}
       </FixedPopupColumn>
-    )
-  }
-  //mobile
-  else
-    return (
       <MobilePopupWrapper height={activePopups?.length > 0 ? 'fit-content' : 0}>
         <MobilePopupInner>
           {activePopups // reverse so new items up front
             .slice(0)
             .reverse()
             .map(item => (
-              <PopupItem key={item.key} content={item.content} popKey={item.key} />
+              <PopupItem key={item.key} content={item.content} popKey={item.key} removeAfterMs={item.removeAfterMs} />
             ))}
         </MobilePopupInner>
       </MobilePopupWrapper>
-    )
+    </>
+  )
 }

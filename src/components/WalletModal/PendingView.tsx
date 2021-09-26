@@ -82,20 +82,20 @@ export default function PendingView({
         <LoadingWrapper>
           {error ? (
             <ErrorGroup>
-              <div>连接错误.</div>
+              <div>Error connecting.</div>
               <ErrorButton
                 onClick={() => {
                   setPendingError(false)
-                  tryActivation(connector)
+                  connector && tryActivation(connector)
                 }}
               >
-                再试一次
+                Try Again
               </ErrorButton>
             </ErrorGroup>
           ) : (
             <>
               <StyledLoader />
-              初始化中...
+              Initializing...
             </>
           )}
         </LoadingWrapper>

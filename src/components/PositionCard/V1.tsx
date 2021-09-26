@@ -28,7 +28,7 @@ function V1PositionCard({ token, V1LiquidityBalance }: PositionCardProps) {
           <RowFixed>
             <DoubleCurrencyLogo currency0={token} margin={true} size={20} />
             <Text fontWeight={500} fontSize={20} style={{ marginLeft: '' }}>
-              {`${token.equals(WETH[chainId]) ? 'WETH' : token.symbol}/ETH`}
+              {`${chainId && token.equals(WETH[chainId]) ? 'WETH' : token.symbol}/ETH`}
             </Text>
             <Text
               fontSize={12}
@@ -48,7 +48,7 @@ function V1PositionCard({ token, V1LiquidityBalance }: PositionCardProps) {
         <AutoColumn gap="8px">
           <RowBetween marginTop="10px">
             <ButtonSecondary width="68%" as={Link} to={`/migrate/v1/${V1LiquidityBalance.token.address}`}>
-              迁移
+              Migrate
             </ButtonSecondary>
 
             <ButtonSecondary
@@ -57,7 +57,7 @@ function V1PositionCard({ token, V1LiquidityBalance }: PositionCardProps) {
               as={Link}
               to={`/remove/v1/${V1LiquidityBalance.token.address}`}
             >
-              移除
+              Remove
             </ButtonSecondary>
           </RowBetween>
         </AutoColumn>

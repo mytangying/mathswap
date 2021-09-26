@@ -200,7 +200,7 @@ const MainWalletAction = styled(WalletAction)`
   color: ${({ theme }) => theme.primary1};
 `
 
-function renderTransactions(transactions) {
+function renderTransactions(transactions: string[]) {
   return (
     <TransactionListWrapper>
       {transactions.map((hash, i) => {
@@ -212,8 +212,8 @@ function renderTransactions(transactions) {
 
 interface AccountDetailsProps {
   toggleWalletModal: () => void
-  pendingTransactions: any[]
-  confirmedTransactions: any[]
+  pendingTransactions: string[]
+  confirmedTransactions: string[]
   ENSName?: string
   openOptions: () => void
 }
@@ -225,7 +225,6 @@ export default function AccountDetails({
   ENSName,
   openOptions
 }: AccountDetailsProps) {
-
   const { chainId, account, connector } = useActiveWeb3React()
   const theme = useContext(ThemeContext)
   const dispatch = useDispatch<AppDispatch>()
@@ -239,7 +238,7 @@ export default function AccountDetails({
           SUPPORTED_WALLETS[k].connector === connector && (connector !== injected || isMetaMask === (k === 'METAMASK'))
       )
       .map(k => SUPPORTED_WALLETS[k].name)[0]
-    return <WalletName>与 {name} 连接</WalletName>
+    return <WalletName>Connected with {name}</WalletName>
   }
 
   function getStatusIcon() {
@@ -252,46 +251,43 @@ export default function AccountDetails({
     } else if (connector === walletconnect) {
       return (
         <IconWrapper size={16}>
-          <img src={WalletConnectIcon} alt={''} />
+          <img src={WalletConnectIcon} alt={'wallet connect logo'} />
         </IconWrapper>
       )
     } else if (connector === walletlink) {
       return (
         <IconWrapper size={16}>
-          <img src={CoinbaseWalletIcon} alt={''} />
+          <img src={CoinbaseWalletIcon} alt={'coinbase wallet logo'} />
         </IconWrapper>
       )
     } else if (connector === fortmatic) {
       return (
         <IconWrapper size={16}>
-          <img src={FortmaticIcon} alt={''} />
+          <img src={FortmaticIcon} alt={'fortmatic logo'} />
         </IconWrapper>
       )
     } else if (connector === portis) {
       return (
         <>
           <IconWrapper size={16}>
-            <img src={PortisIcon} alt={''} />
+            <img src={PortisIcon} alt={'portis logo'} />
             <MainWalletAction
               onClick={() => {
                 portis.portis.showPortis()
               }}
             >
-              显示 Portis
+              Show Portis
             </MainWalletAction>
           </IconWrapper>
         </>
       )
     }
+    return null
   }
 
-  const clearAllTransactionsCallback = useCallback(
-    (event: React.MouseEvent) => {
-      event.preventDefault()
-      dispatch(clearAllTransactions({ chainId }))
-    },
-    [dispatch, chainId]
-  )
+  const clearAllTransactionsCallback = useCallback(() => {
+    if (chainId) dispatch(clearAllTransactions({ chainId }))
+  }, [dispatch, chainId])
 
   return (
     <>
@@ -299,7 +295,7 @@ export default function AccountDetails({
         <CloseIcon onClick={toggleWalletModal}>
           <CloseColor />
         </CloseIcon>
-        <HeaderRow>账号</HeaderRow>
+        <HeaderRow>Account</HeaderRow>
         <AccountSection>
           <YourAccount>
             <InfoCard>
@@ -313,7 +309,7 @@ export default function AccountDetails({
                         ;(connector as any).close()
                       }}
                     >
-                      断开
+                      Disconnect
                     </WalletAction>
                   )}
                   <WalletAction
@@ -322,7 +318,7 @@ export default function AccountDetails({
                       openOptions()
                     }}
                   >
-                    修改
+                    Change
                   </WalletAction>
                 </div>
               </AccountGroupingRow>
@@ -339,7 +335,7 @@ export default function AccountDetails({
                     <>
                       <div>
                         {getStatusIcon()}
-                        <p> {shortenAddress(account)}</p>
+                        <p> {account && shortenAddress(account)}</p>
                       </div>
                     </>
                   )}
@@ -350,17 +346,21 @@ export default function AccountDetails({
                   <>
                     <AccountControl>
                       <div>
-                        <Copy toCopy={account}>
-                          <span style={{ marginLeft: '4px' }}>复制地址</span>
-                        </Copy>
-                        <AddressLink
-                          hasENS={!!ENSName}
-                          isENS={true}
-                          href={getEtherscanLink(chainId, ENSName, 'address')}
-                        >
-                          <LinkIcon size={16} />
-                          <span style={{ marginLeft: '4px' }}>在Etherscan中查看</span>
-                        </AddressLink>
+                        {account && (
+                          <Copy toCopy={account}>
+                            <span style={{ marginLeft: '4px' }}>Copy Address</span>
+                          </Copy>
+                        )}
+                        {chainId && account && (
+                          <AddressLink
+                            hasENS={!!ENSName}
+                            isENS={true}
+                            href={chainId && getEtherscanLink(chainId, ENSName, 'address')}
+                          >
+                            <LinkIcon size={16} />
+                            <span style={{ marginLeft: '4px' }}>View on Etherscan</span>
+                          </AddressLink>
+                        )}
                       </div>
                     </AccountControl>
                   </>
@@ -368,22 +368,25 @@ export default function AccountDetails({
                   <>
                     <AccountControl>
                       <div>
-                        <Copy toCopy={account}>
-                          <span style={{ marginLeft: '4px' }}>复制地址</span>
-                        </Copy>
-                        <AddressLink
-                          hasENS={!!ENSName}
-                          isENS={false}
-                          href={getEtherscanLink(chainId, account, 'address')}
-                        >
-                          <LinkIcon size={16} />
-                          <span style={{ marginLeft: '4px' }}>在Etherscan中查看</span>
-                        </AddressLink>
+                        {account && (
+                          <Copy toCopy={account}>
+                            <span style={{ marginLeft: '4px' }}>Copy Address</span>
+                          </Copy>
+                        )}
+                        {chainId && account && (
+                          <AddressLink
+                            hasENS={!!ENSName}
+                            isENS={false}
+                            href={getEtherscanLink(chainId, account, 'address')}
+                          >
+                            <LinkIcon size={16} />
+                            <span style={{ marginLeft: '4px' }}>View on Etherscan</span>
+                          </AddressLink>
+                        )}
                       </div>
                     </AccountControl>
                   </>
                 )}
-                {/* {formatConnectorName()} */}
               </AccountGroupingRow>
             </InfoCard>
           </YourAccount>
@@ -392,15 +395,15 @@ export default function AccountDetails({
       {!!pendingTransactions.length || !!confirmedTransactions.length ? (
         <LowerSection>
           <AutoRow mb={'1rem'} style={{ justifyContent: 'space-between' }}>
-            <TYPE.body>最近交易</TYPE.body>
-            <LinkStyledButton onClick={clearAllTransactionsCallback}>(清空)</LinkStyledButton>
+            <TYPE.body>Recent Transactions</TYPE.body>
+            <LinkStyledButton onClick={clearAllTransactionsCallback}>(clear all)</LinkStyledButton>
           </AutoRow>
           {renderTransactions(pendingTransactions)}
           {renderTransactions(confirmedTransactions)}
         </LowerSection>
       ) : (
         <LowerSection>
-          <TYPE.body color={theme.text1}>你的交易将会出现在这里...</TYPE.body>
+          <TYPE.body color={theme.text1}>Your transactions will appear here...</TYPE.body>
         </LowerSection>
       )}
     </>

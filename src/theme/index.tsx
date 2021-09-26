@@ -52,10 +52,10 @@ export function colors(darkMode: boolean): Colors {
     bg2: darkMode ? '#2C2F36' : '#F7F8FA',
     bg3: darkMode ? '#40444F' : '#EDEEF2',
     bg4: darkMode ? '#565A69' : '#CED0D9',
-    bg5: darkMode ? '#565A69' : '#888D9B',
+    bg5: darkMode ? '#6C7284' : '#888D9B',
 
     //specialty colors
-    modalBG: darkMode ? 'rgba(0,0,0,0.85)' : 'rgba(0,0,0,0.6)',
+    modalBG: darkMode ? 'rgba(0,0,0,.425)' : 'rgba(0,0,0,0.3)',
     advancedBG: darkMode ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.6)',
 
     //primary colors
@@ -172,24 +172,28 @@ export const FixedGlobalStyle = createGlobalStyle`
 html, input, textarea, button {
   font-family: 'Inter', sans-serif;
   letter-spacing: -0.018em;
+  font-display: fallback;
 }
 @supports (font-variation-settings: normal) {
   html, input, textarea, button {
     font-family: 'Inter var', sans-serif;
-    font-display: fallback;
   }
 }
+
 html,
 body {
   margin: 0;
   padding: 0;
 }
+
 * {
   box-sizing: border-box;
 }
+
 button {
   user-select: none;
 }
+
 html {
   font-size: 16px;
   font-variant: none;
@@ -204,6 +208,7 @@ html {
   color: ${({ theme }) => theme.text1};
   background-color: ${({ theme }) => theme.bg2};
 }
+
 body {
   min-height: 100vh;
   background-position: 0 -30vh;
@@ -215,4 +220,3 @@ body {
     )} 100%)`};
 }
 `
-

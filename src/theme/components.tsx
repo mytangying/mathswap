@@ -40,22 +40,22 @@ export const CloseIcon = styled(X)<{ onClick: () => void }>`
 `
 
 // A button that triggers some onClick result, but looks like a link.
-export const LinkStyledButton = styled.button`
+export const LinkStyledButton = styled.button<{ disabled?: boolean }>`
   border: none;
   text-decoration: none;
   background: none;
 
-  cursor: pointer;
-  color: ${({ theme }) => theme.primary1};
+  cursor: ${({ disabled }) => (disabled ? 'default' : 'pointer')};
+  color: ${({ theme, disabled }) => (disabled ? theme.text2 : theme.primary1)};
   font-weight: 500;
 
   :hover {
-    text-decoration: underline;
+    text-decoration: ${({ disabled }) => (disabled ? null : 'underline')};
   }
 
   :focus {
     outline: none;
-    text-decoration: underline;
+    text-decoration: ${({ disabled }) => (disabled ? null : 'underline')};
   }
 
   :active {
@@ -148,12 +148,6 @@ export const Spinner = styled.img`
   height: 16px;
 `
 
-export const CursorPointer = styled.div`
-  :hover {
-    cursor: pointer;
-  }
-`
-
 const BackArrowLink = styled(StyledInternalLink)`
   color: ${({ theme }) => theme.text1};
 `
@@ -164,56 +158,3 @@ export function BackArrow({ to }: { to: string }) {
     </BackArrowLink>
   )
 }
-
-export const MaxWidthWrapper = styled.div`
-  max-width:420px;
-  width: 100%;
-  margin-top:2rem;
-  box-sizing:border-box;
-`
-
-export const CardWrapper = styled(MaxWidthWrapper)`
-  cursor:pointer;
-  background-color: ${({ theme }) => theme.primary5};
-  color: ${({ theme }) => theme.primaryText1};
-  padding: 18px;
-  border-radius:20px;
-  @media (max-width: 500px){
-    padding: 16px;
-  }
-  *{
-    vertical-align:middle;
-  }
-  img{
-    margin-right:8px;
-
-  }
-`
-export const PageWrapper = styled(MaxWidthWrapper)`
-  background:${({ theme }) => theme.advancedBG};
-  color: ${({ theme }) => theme.text1};
-  border-radius:30px;
-  margin-top:1rem;
-  box-shadow:0px 0px 1px rgba(0,0,0,0.01), 0px 4px 8px rgba(0,0,0,0.04), 0px 16px 24px rgba(0,0,0,0.04), 0px 24px 32px rgba(0,0,0,0.01);
-  padding: 18px;
-  @media (max-width: 500px){
-    padding: 16px;
-  }
-  *{
-    vertical-align:middle;
-  }
-  img{
-    margin-right:8px;
-
-  }
-`
-export const NullWrapper = styled(PageWrapper)`
-  pointer-events: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding:2rem;
-  font-size:16px;
-  font-weight:500;
-`
-

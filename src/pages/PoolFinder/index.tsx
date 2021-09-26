@@ -71,7 +71,7 @@ export default function PoolFinder() {
   const prerequisiteMessage = (
     <LightCard padding="45px 10px">
       <Text textAlign="center">
-        {!account ? '连接到钱包以查找资金池' : '选择一个代币找对应的流动性'}
+        {!account ? 'Connect to a wallet to find pools' : 'Select a token to find your liquidity.'}
       </Text>
     </LightCard>
   )
@@ -95,7 +95,7 @@ export default function PoolFinder() {
             </Row>
           ) : (
             <Text fontWeight={500} fontSize={20} marginLeft={'12px'}>
-              选择一个代币
+              Select a Token
             </Text>
           )}
         </ButtonDropdownLight>
@@ -119,7 +119,7 @@ export default function PoolFinder() {
             </Row>
           ) : (
             <Text fontWeight={500} fontSize={20} marginLeft={'12px'}>
-              选择一个代币
+              Select a Token
             </Text>
           )}
         </ButtonDropdownLight>
@@ -129,7 +129,7 @@ export default function PoolFinder() {
             style={{ justifyItems: 'center', backgroundColor: '', padding: '12px 0px', borderRadius: '12px' }}
           >
             <Text textAlign="center" fontWeight={500}>
-              找到资金池!
+              Pool Found!
             </Text>
           </ColumnCenter>
         )}
@@ -141,9 +141,9 @@ export default function PoolFinder() {
             ) : (
               <LightCard padding="45px 10px">
                 <AutoColumn gap="sm" justify="center">
-                  <Text textAlign="center">你还没有在这个资金池添加流动性</Text>
+                  <Text textAlign="center">You don’t have liquidity in this pool yet.</Text>
                   <StyledInternalLink to={`/add/${currencyId(currency0)}/${currencyId(currency1)}`}>
-                    <Text textAlign="center">添加流动性</Text>
+                    <Text textAlign="center">Add liquidity.</Text>
                   </StyledInternalLink>
                 </AutoColumn>
               </LightCard>
@@ -151,9 +151,9 @@ export default function PoolFinder() {
           ) : validPairNoLiquidity ? (
             <LightCard padding="45px 10px">
               <AutoColumn gap="sm" justify="center">
-                <Text textAlign="center">没有找到资金池</Text>
+                <Text textAlign="center">No pool found.</Text>
                 <StyledInternalLink to={`/add/${currencyId(currency0)}/${currencyId(currency1)}`}>
-                  创建资金池
+                  Create pool.
                 </StyledInternalLink>
               </AutoColumn>
             </LightCard>
@@ -161,7 +161,7 @@ export default function PoolFinder() {
             <LightCard padding="45px 10px">
               <AutoColumn gap="sm" justify="center">
                 <Text textAlign="center" fontWeight={500}>
-                  无效交易对
+                  Invalid pair.
                 </Text>
               </AutoColumn>
             </LightCard>
@@ -169,7 +169,7 @@ export default function PoolFinder() {
             <LightCard padding="45px 10px">
               <AutoColumn gap="sm" justify="center">
                 <Text textAlign="center">
-                  加载中
+                  Loading
                   <Dots />
                 </Text>
               </AutoColumn>
@@ -185,7 +185,7 @@ export default function PoolFinder() {
         onCurrencySelect={handleCurrencySelect}
         onDismiss={handleSearchDismiss}
         showCommonBases
-        hiddenCurrency={(activeField === Fields.TOKEN0 ? currency1 : currency0) ?? undefined}
+        selectedCurrency={(activeField === Fields.TOKEN0 ? currency1 : currency0) ?? undefined}
       />
     </AppBody>
   )

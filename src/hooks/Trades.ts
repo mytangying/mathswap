@@ -2,9 +2,8 @@ import { Currency, CurrencyAmount, Pair, Token, Trade } from '@uniswap/sdk'
 import flatMap from 'lodash.flatmap'
 import { useMemo } from 'react'
 
-import { BASES_TO_CHECK_TRADES_AGAINST } from '../constants'
+import { BASES_TO_CHECK_TRADES_AGAINST, CUSTOM_BASES } from '../constants'
 import { PairState, usePairs } from '../data/Reserves'
-import { maxHopsFor } from '../utils/maxHopsFor'
 import { wrappedCurrency } from '../utils/wrappedCurrency'
 
 import { useActiveWeb3React } from './index'
@@ -18,18 +17,46 @@ function useAllCommonPairs(currencyA?: Currency, currencyB?: Currency): Pair[] {
     ? [wrappedCurrency(currencyA, chainId), wrappedCurrency(currencyB, chainId)]
     : [undefined, undefined]
 
-  const allPairCombinations: [Token | undefined, Token | undefined][] = useMemo(
-    () => [
-      // the direct pair
-      [tokenA, tokenB],
-      // token A against all bases
-      ...bases.map((base): [Token | undefined, Token | undefined] => [tokenA, base]),
-      // token B against all bases
-      ...bases.map((base): [Token | undefined, Token | undefined] => [tokenB, base]),
-      // each base against all bases
-      ...flatMap(bases, (base): [Token, Token][] => bases.map(otherBase => [base, otherBase]))
-    ],
-    [tokenA, tokenB, bases]
+  const basePairs: [Token, Token][] = useMemo(
+    () =>
+      flatMap(bases, (base): [Token, Token][] => bases.map(otherBase => [base, otherBase])).filter(
+        ([t0, t1]) => t0.address !== t1.address
+      ),
+    [bases]
+  )
+
+  const allPairCombinations: [Token, Token][] = useMemo(
+    () =>
+      tokenA && tokenB
+        ? [
+            // the direct pair
+            [tokenA, tokenB],
+            // token A against all bases
+            ...bases.map((base): [Token, Token] => [tokenA, base]),
+            // token B against all bases
+            ...bases.map((base): [Token, Token] => [tokenB, base]),
+            // each base against all bases
+            ...basePairs
+          ]
+            .filter((tokens): tokens is [Token, Token] => Boolean(tokens[0] && tokens[1]))
+            .filter(([t0, t1]) => t0.address !== t1.address)
+            .filter(([tokenA, tokenB]) => {
+              if (!chainId) return true
+              const customBases = CUSTOM_BASES[chainId]
+              if (!customBases) return true
+
+              const customBasesA: Token[] | undefined = customBases[tokenA.address]
+              const customBasesB: Token[] | undefined = customBases[tokenB.address]
+
+              if (!customBasesA && !customBasesB) return true
+
+              if (customBasesA && !customBasesA.find(base => tokenB.equals(base))) return false
+              if (customBasesB && !customBasesB.find(base => tokenA.equals(base))) return false
+
+              return true
+            })
+        : [],
+    [tokenA, tokenB, bases, basePairs, chainId]
   )
 
   const allPairs = usePairs(allPairCombinations)
@@ -56,12 +83,10 @@ function useAllCommonPairs(currencyA?: Currency, currencyB?: Currency): Pair[] {
  */
 export function useTradeExactIn(currencyAmountIn?: CurrencyAmount, currencyOut?: Currency): Trade | null {
   const allowedPairs = useAllCommonPairs(currencyAmountIn?.currency, currencyOut)
-
   return useMemo(() => {
     if (currencyAmountIn && currencyOut && allowedPairs.length > 0) {
-      const maxHops = maxHopsFor(currencyAmountIn.currency, currencyOut)
       return (
-        Trade.bestTradeExactIn(allowedPairs, currencyAmountIn, currencyOut, { maxHops, maxNumResults: 1 })[0] ?? null
+        Trade.bestTradeExactIn(allowedPairs, currencyAmountIn, currencyOut, { maxHops: 3, maxNumResults: 1 })[0] ?? null
       )
     }
     return null
@@ -76,9 +101,9 @@ export function useTradeExactOut(currencyIn?: Currency, currencyAmountOut?: Curr
 
   return useMemo(() => {
     if (currencyIn && currencyAmountOut && allowedPairs.length > 0) {
-      const maxHops = maxHopsFor(currencyIn, currencyAmountOut.currency)
       return (
-        Trade.bestTradeExactOut(allowedPairs, currencyIn, currencyAmountOut, { maxHops, maxNumResults: 1 })[0] ?? null
+        Trade.bestTradeExactOut(allowedPairs, currencyIn, currencyAmountOut, { maxHops: 3, maxNumResults: 1 })[0] ??
+        null
       )
     }
     return null

@@ -23,7 +23,7 @@ export default function useWrapCallback(
   inputCurrency: Currency | undefined,
   outputCurrency: Currency | undefined,
   typedValue: string | undefined
-): { wrapType: WrapType; execute?: undefined | (() => Promise<void>); error?: string } {
+): { wrapType: WrapType; execute?: undefined | (() => Promise<void>); inputError?: string } {
   const { chainId, account } = useActiveWeb3React()
   const wethContract = useWETHContract()
   const balance = useCurrencyBalance(account ?? undefined, inputCurrency)
@@ -44,13 +44,13 @@ export default function useWrapCallback(
             ? async () => {
                 try {
                   const txReceipt = await wethContract.deposit({ value: `0x${inputAmount.raw.toString(16)}` })
-                  addTransaction(txReceipt, { summary: `Wrap ${inputAmount.toSignificant(6)} ETH to WETH` })
+                  addTransaction(txReceipt, { summary: `Wrap ${inputAmount.toSignificant(6)} MATH to WETH` })
                 } catch (error) {
                   console.error('Could not deposit', error)
                 }
               }
             : undefined,
-        error: sufficientBalance ? undefined : 'ETH 余额不足'
+        inputError: sufficientBalance ? undefined : 'Insufficient MATH balance'
       }
     } else if (currencyEquals(WETH[chainId], inputCurrency) && outputCurrency === ETHER) {
       return {
@@ -66,7 +66,7 @@ export default function useWrapCallback(
                 }
               }
             : undefined,
-        error: sufficientBalance ? undefined : 'WETH 余额不足'
+        inputError: sufficientBalance ? undefined : 'Insufficient WETH balance'
       }
     } else {
       return NOT_APPLICABLE

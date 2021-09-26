@@ -1,14 +1,14 @@
-import React, { useRef, useEffect, useContext, useState } from 'react'
+import React, { useRef, useContext, useState } from 'react'
 import { Settings, X } from 'react-feather'
 import styled from 'styled-components'
-
+import { useOnClickOutside } from '../../hooks/useOnClickOutside'
 import {
   useUserSlippageTolerance,
   useExpertModeManager,
   useUserDeadline,
   useDarkModeManager
 } from '../../state/user/hooks'
-import SlippageTabs from '../SlippageTabs'
+import TransactionSettings from '../TransactionSettings'
 import { RowFixed, RowBetween } from '../Row'
 import { TYPE } from '../../theme'
 import QuestionHelper from '../QuestionHelper'
@@ -88,7 +88,9 @@ const MenuFlyout = styled.span`
   background-color: ${({ theme }) => theme.bg1};
   box-shadow: 0px 0px 1px rgba(0, 0, 0, 0.01), 0px 4px 8px rgba(0, 0, 0, 0.04), 0px 16px 24px rgba(0, 0, 0, 0.04),
     0px 24px 32px rgba(0, 0, 0, 0.01);
+
   border: 1px solid ${({ theme }) => theme.bg3};
+
   border-radius: 0.5rem;
   display: flex;
   flex-direction: column;
@@ -136,62 +138,49 @@ export default function SettingsTab() {
   // show confirmation view before turning on
   const [showConfirmation, setShowConfirmation] = useState(false)
 
-  useEffect(() => {
-    const handleClickOutside = e => {
-      if (node.current?.contains(e.target) ?? false) {
-        return
-      }
-      toggle()
-    }
-
-    if (open) {
-      document.addEventListener('mousedown', handleClickOutside)
-    } else {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [open, toggle])
+  useOnClickOutside(node, open ? toggle : undefined)
 
   return (
-    <StyledMenu ref={node}>
-      <Modal isOpen={showConfirmation} onDismiss={() => setShowConfirmation(false)}>
+    // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/30451
+    <StyledMenu ref={node as any}>
+      <Modal isOpen={showConfirmation} onDismiss={() => setShowConfirmation(false)} maxHeight={100}>
         <ModalContentWrapper>
           <AutoColumn gap="lg">
             <RowBetween style={{ padding: '0 2rem' }}>
               <div />
               <Text fontWeight={500} fontSize={20}>
-                你确定么？
+                Are you sure?
               </Text>
               <StyledCloseIcon onClick={() => setShowConfirmation(false)} />
             </RowBetween>
             <Break />
             <AutoColumn gap="lg" style={{ padding: '0 2rem' }}>
               <Text fontWeight={500} fontSize={20}>
-                专家模式关掉了确认弹框，并且允许高滑点的交易，这经常会导致糟糕的汇率和资产损失。
+                Expert mode turns off the confirm transaction prompt and allows high slippage trades that often result
+                in bad rates and lost funds.
               </Text>
               <Text fontWeight={600} fontSize={20}>
-                只有在你非常明确你在做什么的时候再开启专家模式。
+                ONLY USE THIS MODE IF YOU KNOW WHAT YOU ARE DOING.
               </Text>
               <ButtonError
                 error={true}
                 padding={'12px'}
                 onClick={() => {
-                  toggleExpertMode()
-                  setShowConfirmation(false)
+                  if (window.prompt(`Please type the word "confirm" to enable expert mode.`) === 'confirm') {
+                    toggleExpertMode()
+                    setShowConfirmation(false)
+                  }
                 }}
               >
-                <Text fontSize={20} fontWeight={500}>
-                  打开专家模式
+                <Text fontSize={20} fontWeight={500} id="confirm-expert-mode">
+                  Turn On Expert Mode
                 </Text>
               </ButtonError>
             </AutoColumn>
           </AutoColumn>
         </ModalContentWrapper>
       </Modal>
-      <StyledMenuButton onClick={toggle}>
+      <StyledMenuButton onClick={toggle} id="open-settings-dialog-button">
         <StyledMenuIcon />
         {expertMode && (
           <EmojiWrapper>
@@ -205,25 +194,26 @@ export default function SettingsTab() {
         <MenuFlyout>
           <AutoColumn gap="md" style={{ padding: '1rem' }}>
             <Text fontWeight={600} fontSize={14}>
-              交易设置
+              Transaction Settings
             </Text>
-            <SlippageTabs
+            <TransactionSettings
               rawSlippage={userSlippageTolerance}
               setRawSlippage={setUserslippageTolerance}
               deadline={deadline}
               setDeadline={setDeadline}
             />
             <Text fontWeight={600} fontSize={14}>
-              界面设置
+              Interface Settings
             </Text>
             <RowBetween>
               <RowFixed>
                 <TYPE.black fontWeight={400} fontSize={14} color={theme.text2}>
-                  专家模式开关
+                  Toggle Expert Mode
                 </TYPE.black>
-                <QuestionHelper text="绕过确认弹窗并允许高滑点交易，风险自负" />
+                <QuestionHelper text="Bypasses confirmation modals and allows high slippage trades. Use at your own risk." />
               </RowFixed>
               <Toggle
+                id="toggle-expert-mode-button"
                 isActive={expertMode}
                 toggle={
                   expertMode
@@ -231,14 +221,17 @@ export default function SettingsTab() {
                         toggleExpertMode()
                         setShowConfirmation(false)
                       }
-                    : () => setShowConfirmation(true)
+                    : () => {
+                        toggle()
+                        setShowConfirmation(true)
+                      }
                 }
               />
             </RowBetween>
             <RowBetween>
               <RowFixed>
                 <TYPE.black fontWeight={400} fontSize={14} color={theme.text2}>
-                  暗黑界面开关
+                  Toggle Dark Mode
                 </TYPE.black>
               </RowFixed>
               <Toggle isActive={darkMode} toggle={toggleDarkMode} />

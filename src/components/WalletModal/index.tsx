@@ -11,12 +11,14 @@ import AccountDetails from '../AccountDetails'
 import PendingView from './PendingView'
 import Option from './Option'
 import { SUPPORTED_WALLETS } from '../../constants'
-import { ExternalLink } from '../../theme'
+// import { ExternalLink } from '../../theme'
+import MathWalletIcon from '../../assets/images/mathwallet.png'
 import MetamaskIcon from '../../assets/images/metamask.png'
 import { ReactComponent as Close } from '../../assets/images/x.svg'
 import { injected, fortmatic, portis } from '../../connectors'
 import { OVERLAY_READY } from '../../connectors/Fortmatic'
 import { WalletConnectConnector } from '@web3-react/walletconnect-connector'
+import { AbstractConnector } from '@web3-react/abstract-connector'
 
 const CloseIcon = styled.div`
   position: absolute;
@@ -80,17 +82,17 @@ const UpperSection = styled.div`
   }
 `
 
-const Blurb = styled.div`
-  ${({ theme }) => theme.flexRowNoWrap}
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-top: 2rem;
-  ${({ theme }) => theme.mediaWidth.upToMedium`
-    margin: 1rem;
-    font-size: 12px;
-  `};
-`
+// const Blurb = styled.div`
+//   ${({ theme }) => theme.flexRowNoWrap}
+//   align-items: center;
+//   justify-content: center;
+//   flex-wrap: wrap;
+//   margin-top: 2rem;
+//   ${({ theme }) => theme.mediaWidth.upToMedium`
+//     margin: 1rem;
+//     font-size: 12px;
+//   `};
+// `
 
 const OptionGrid = styled.div`
   display: grid;
@@ -128,7 +130,7 @@ export default function WalletModal({
 
   const [walletView, setWalletView] = useState(WALLET_VIEWS.ACCOUNT)
 
-  const [pendingWallet, setPendingWallet] = useState()
+  const [pendingWallet, setPendingWallet] = useState<AbstractConnector | undefined>()
 
   const [pendingError, setPendingError] = useState<boolean>()
 
@@ -161,7 +163,7 @@ export default function WalletModal({
     }
   }, [setWalletView, active, error, connector, walletModalOpen, activePrevious, connectorPrevious])
 
-  const tryActivation = async connector => {
+  const tryActivation = async (connector: AbstractConnector | undefined) => {
     let name = ''
     Object.keys(SUPPORTED_WALLETS).map(key => {
       if (connector === SUPPORTED_WALLETS[key].connector) {
@@ -183,13 +185,14 @@ export default function WalletModal({
       connector.walletConnectProvider = undefined
     }
 
-    activate(connector, undefined, true).catch(error => {
-      if (error instanceof UnsupportedChainIdError) {
-        activate(connector) // a little janky...can't use setError because the connector isn't set
-      } else {
-        setPendingError(true)
-      }
-    })
+    connector &&
+      activate(connector, undefined, true).catch(error => {
+        if (error instanceof UnsupportedChainIdError) {
+          activate(connector) // a little janky...can't use setError because the connector isn't set
+        } else {
+          setPendingError(true)
+        }
+      })
   }
 
   // close wallet modal if fortmatic modal is active
@@ -235,7 +238,19 @@ export default function WalletModal({
       if (option.connector === injected) {
         // don't show injected if there's no injected provider
         if (!(window.web3 || window.ethereum)) {
-          if (option.name === 'MetaMask') {
+          if (option.name === 'MathWallet') {
+            return (
+              <Option
+                id={`connect-${key}`}
+                key={key}
+                color={'#E8831D'}
+                header={'Install MathWallet'}
+                subheader={null}
+                link={'https://mathwallet.org/#extension'}
+                icon={MathWalletIcon}
+              />
+            )
+          }else if (option.name === 'MetaMask') {
             return (
               <Option
                 id={`connect-${key}`}
@@ -292,12 +307,12 @@ export default function WalletModal({
           <CloseIcon onClick={toggleWalletModal}>
             <CloseColor />
           </CloseIcon>
-          <HeaderRow>{error instanceof UnsupportedChainIdError ? '网络错误' : '连接错误'}</HeaderRow>
+          <HeaderRow>{error instanceof UnsupportedChainIdError ? 'Wrong Network' : 'Error connecting'}</HeaderRow>
           <ContentWrapper>
             {error instanceof UnsupportedChainIdError ? (
               <h5>Please connect to the appropriate Ethereum network.</h5>
             ) : (
-              '连接错误，尝试刷新页面。'
+              'Error connecting. Try refreshing the page.'
             )}
           </ContentWrapper>
         </UpperSection>
@@ -327,12 +342,12 @@ export default function WalletModal({
                 setWalletView(WALLET_VIEWS.ACCOUNT)
               }}
             >
-              返回
+              Back
             </HoverText>
           </HeaderRow>
         ) : (
           <HeaderRow>
-            <HoverText>连接钱包</HoverText>
+            <HoverText>Connect to a wallet</HoverText>
           </HeaderRow>
         )}
         <ContentWrapper>
@@ -346,21 +361,19 @@ export default function WalletModal({
           ) : (
             <OptionGrid>{getOptions()}</OptionGrid>
           )}
-          {walletView !== WALLET_VIEWS.PENDING && (
+          {/* {walletView !== WALLET_VIEWS.PENDING && (
             <Blurb>
-              <span>以太坊新手？ &nbsp;</span>{' '}
-              <ExternalLink href="https://ethereum.org/use/#3-what-is-a-wallet-and-which-one-should-i-use">
-                了解有关钱包的更多信息
-              </ExternalLink>
+              <span>New to Ethereum? &nbsp;</span>{' '}
+              <ExternalLink href="https://ethereum.org/wallets/">Learn more about wallets</ExternalLink>
             </Blurb>
-          )}
+          )} */}
         </ContentWrapper>
       </UpperSection>
     )
   }
 
   return (
-    <Modal isOpen={walletModalOpen} onDismiss={toggleWalletModal} minHeight={null} maxHeight={90}>
+    <Modal isOpen={walletModalOpen} onDismiss={toggleWalletModal} minHeight={false} maxHeight={90}>
       <Wrapper>{getModalContent()}</Wrapper>
     </Modal>
   )

@@ -11,7 +11,7 @@ import { ThemeContext } from 'styled-components'
 import { ButtonPrimary, ButtonLight, ButtonError, ButtonConfirmed } from '../../components/Button'
 import { LightCard } from '../../components/Card'
 import { AutoColumn, ColumnCenter } from '../../components/Column'
-import ConfirmationModal from '../../components/ConfirmationModal'
+import TransactionConfirmationModal, { ConfirmationModalContent } from '../../components/TransactionConfirmationModal'
 import CurrencyInputPanel from '../../components/CurrencyInputPanel'
 import DoubleCurrencyLogo from '../../components/DoubleLogo'
 import { AddRemoveTabs } from '../../components/NavigationTabs'
@@ -29,6 +29,7 @@ import { useTransactionAdder } from '../../state/transactions/hooks'
 import { StyledInternalLink, TYPE } from '../../theme'
 import { calculateGasMargin, calculateSlippageAmount, getRouterContract } from '../../utils'
 import { currencyId } from '../../utils/currencyId'
+import useDebouncedChangeHandler from '../../utils/useDebouncedChangeHandler'
 import { wrappedCurrency } from '../../utils/wrappedCurrency'
 import AppBody from '../AppBody'
 import { ClickableText, MaxButton, Wrapper } from '../Pool/styleds'
@@ -274,12 +275,13 @@ export default function RemoveLiquidity({
       throw new Error('Attempting to confirm without approval or a signature. Please contact support.')
     }
 
-    const safeGasEstimates = await Promise.all(
+    const safeGasEstimates: (BigNumber | undefined)[] = await Promise.all(
       methodNames.map(methodName =>
         router.estimateGas[methodName](...args)
           .then(calculateGasMargin)
           .catch(error => {
-            console.error(`estimateGas failed for ${methodName}`, error)
+            console.error(`estimateGas failed`, methodName, args, error)
+            return undefined
           })
       )
     )
@@ -360,7 +362,8 @@ export default function RemoveLiquidity({
         </RowBetween>
 
         <TYPE.italic fontSize={12} color={theme.text2} textAlign="left" padding={'12px 0 0 0'}>
-          {`结果是预估值，如果价格变化超过 ${allowedSlippage / 100}% 您的交易将恢复`}
+          {`Output is estimated. If the price changes by more than ${allowedSlippage /
+            100}% your transaction will revert.`}
         </TYPE.italic>
       </AutoColumn>
     )
@@ -384,7 +387,7 @@ export default function RemoveLiquidity({
           <>
             <RowBetween>
               <Text color={theme.text2} fontWeight={500} fontSize={16}>
-                价格
+                Price
               </Text>
               <Text fontWeight={500} fontSize={16} color={theme.text1}>
                 1 {currencyA?.symbol} = {tokenA ? pair.priceOf(tokenA).toSignificant(6) : '-'} {currencyB?.symbol}
@@ -400,16 +403,16 @@ export default function RemoveLiquidity({
         )}
         <ButtonPrimary disabled={!(approval === ApprovalState.APPROVED || signatureData !== null)} onClick={onRemove}>
           <Text fontWeight={500} fontSize={20}>
-            确认
+            Confirm
           </Text>
         </ButtonPrimary>
       </>
     )
   }
 
-  const pendingText = `移除 ${parsedAmounts[Field.CURRENCY_A]?.toSignificant(6)} ${
+  const pendingText = `Removing ${parsedAmounts[Field.CURRENCY_A]?.toSignificant(6)} ${
     currencyA?.symbol
-  } 和 ${parsedAmounts[Field.CURRENCY_B]?.toSignificant(6)} ${currencyB?.symbol}`
+  } and ${parsedAmounts[Field.CURRENCY_B]?.toSignificant(6)} ${currencyB?.symbol}`
 
   const liquidityPercentChangeCallback = useCallback(
     (value: number) => {
@@ -446,41 +449,53 @@ export default function RemoveLiquidity({
     [currencyIdA, currencyIdB, history]
   )
 
+  const handleDismissConfirmation = useCallback(() => {
+    setShowConfirm(false)
+    setSignatureData(null) // important that we clear signature data to avoid bad sigs
+    // if there was a tx hash, we want to clear the input
+    if (txHash) {
+      onUserInput(Field.LIQUIDITY_PERCENT, '0')
+    }
+    setTxHash('')
+  }, [onUserInput, txHash])
+
+  const [innerLiquidityPercentage, setInnerLiquidityPercentage] = useDebouncedChangeHandler(
+    Number.parseInt(parsedAmounts[Field.LIQUIDITY_PERCENT].toFixed(0)),
+    liquidityPercentChangeCallback
+  )
+
   return (
     <>
       <AppBody>
         <AddRemoveTabs adding={false} />
         <Wrapper>
-          <ConfirmationModal
+          <TransactionConfirmationModal
             isOpen={showConfirm}
-            onDismiss={() => {
-              setShowConfirm(false)
-              setSignatureData(null) // important that we clear signature data to avoid bad sigs
-              // if there was a tx hash, we want to clear the input
-              if (txHash) {
-                onUserInput(Field.LIQUIDITY_PERCENT, '0')
-              }
-              setTxHash('')
-            }}
+            onDismiss={handleDismissConfirmation}
             attemptingTxn={attemptingTxn}
             hash={txHash ? txHash : ''}
-            topContent={modalHeader}
-            bottomContent={modalBottom}
+            content={() => (
+              <ConfirmationModalContent
+                title={'You will receive'}
+                onDismiss={handleDismissConfirmation}
+                topContent={modalHeader}
+                bottomContent={modalBottom}
+              />
+            )}
             pendingText={pendingText}
-            title="您将收到"
           />
           <AutoColumn gap="md">
             <LightCard>
               <AutoColumn gap="20px">
                 <RowBetween>
-                  <Text fontWeight={500}>数量</Text>
+                  <Text fontWeight={500}>Amount</Text>
                   <ClickableText
                     fontWeight={500}
                     onClick={() => {
                       setShowDetailed(!showDetailed)
                     }}
                   >
-                    {showDetailed ? '简单设置' : '高级设置'}
+                    {showDetailed ? 'Simple' : 'Detailed'}
                   </ClickableText>
                 </RowBetween>
                 <Row style={{ alignItems: 'flex-end' }}>
@@ -490,10 +505,7 @@ export default function RemoveLiquidity({
                 </Row>
                 {!showDetailed && (
                   <>
-                    <Slider
-                      value={Number.parseInt(parsedAmounts[Field.LIQUIDITY_PERCENT].toFixed(0))}
-                      onChange={liquidityPercentChangeCallback}
-                    />
+                    <Slider value={innerLiquidityPercentage} onChange={setInnerLiquidityPercentage} />
                     <RowBetween>
                       <MaxButton onClick={() => onUserInput(Field.LIQUIDITY_PERCENT, '25')} width="20%">
                         25%
@@ -505,7 +517,7 @@ export default function RemoveLiquidity({
                         75%
                       </MaxButton>
                       <MaxButton onClick={() => onUserInput(Field.LIQUIDITY_PERCENT, '100')} width="20%">
-                        最大值
+                        Max
                       </MaxButton>
                     </RowBetween>
                   </>
@@ -549,15 +561,15 @@ export default function RemoveLiquidity({
                               currencyB === ETHER ? WETH[chainId].address : currencyIdB
                             }`}
                           >
-                            接收 WETH
+                            Receive WETH
                           </StyledInternalLink>
                         ) : oneCurrencyIsWETH ? (
                           <StyledInternalLink
                             to={`/remove/${
-                              currencyA && currencyEquals(currencyA, WETH[chainId]) ? 'ETH' : currencyIdA
-                            }/${currencyB && currencyEquals(currencyB, WETH[chainId]) ? 'ETH' : currencyIdB}`}
+                              currencyA && currencyEquals(currencyA, WETH[chainId]) ? 'MATH' : currencyIdA
+                            }/${currencyB && currencyEquals(currencyB, WETH[chainId]) ? 'MATH' : currencyIdB}`}
                           >
-                            接收 ETH
+                            Receive MATH
                           </StyledInternalLink>
                         ) : null}
                       </RowBetween>
@@ -579,7 +591,6 @@ export default function RemoveLiquidity({
                   disableCurrencySelect
                   currency={pair?.liquidityToken}
                   pair={pair}
-                  label={'输入'}
                   id="liquidity-amount"
                 />
                 <ColumnCenter>
@@ -592,7 +603,7 @@ export default function RemoveLiquidity({
                   onMax={() => onUserInput(Field.LIQUIDITY_PERCENT, '100')}
                   showMaxButton={!atMaxAmount}
                   currency={currencyA}
-                  label={'输出'}
+                  label={'Output'}
                   onCurrencySelect={handleSelectCurrencyA}
                   id="remove-liquidity-tokena"
                 />
@@ -606,7 +617,7 @@ export default function RemoveLiquidity({
                   onMax={() => onUserInput(Field.LIQUIDITY_PERCENT, '100')}
                   showMaxButton={!atMaxAmount}
                   currency={currencyB}
-                  label={'输出'}
+                  label={'Output'}
                   onCurrencySelect={handleSelectCurrencyB}
                   id="remove-liquidity-tokenb"
                 />
@@ -615,7 +626,7 @@ export default function RemoveLiquidity({
             {pair && (
               <div style={{ padding: '10px 20px' }}>
                 <RowBetween>
-                  价格:
+                  Price:
                   <div>
                     1 {currencyA?.symbol} = {tokenA ? pair.priceOf(tokenA).toSignificant(6) : '-'} {currencyB?.symbol}
                   </div>
@@ -623,21 +634,14 @@ export default function RemoveLiquidity({
                 <RowBetween>
                   <div />
                   <div>
-                    1 {currencyB?.symbol} ={' '}
-                    {tokenB
-                      ? pair
-                          .priceOf(tokenB)
-                          .invert()
-                          .toSignificant(6)
-                      : '-'}{' '}
-                    {currencyA?.symbol}
+                    1 {currencyB?.symbol} = {tokenB ? pair.priceOf(tokenB).toSignificant(6) : '-'} {currencyA?.symbol}
                   </div>
                 </RowBetween>
               </div>
             )}
             <div style={{ position: 'relative' }}>
               {!account ? (
-                <ButtonLight onClick={toggleWalletModal}>连接钱包</ButtonLight>
+                <ButtonLight onClick={toggleWalletModal}>Connect Wallet</ButtonLight>
               ) : (
                 <RowBetween>
                   <ButtonConfirmed
@@ -649,11 +653,11 @@ export default function RemoveLiquidity({
                     fontSize={16}
                   >
                     {approval === ApprovalState.PENDING ? (
-                      <Dots>授权中</Dots>
+                      <Dots>Approving</Dots>
                     ) : approval === ApprovalState.APPROVED || signatureData !== null ? (
-                      '已授权'
+                      'Approved'
                     ) : (
-                      '授权'
+                      'Approve'
                     )}
                   </ButtonConfirmed>
                   <ButtonError
@@ -664,7 +668,7 @@ export default function RemoveLiquidity({
                     error={!isValid && !!parsedAmounts[Field.CURRENCY_A] && !!parsedAmounts[Field.CURRENCY_B]}
                   >
                     <Text fontSize={16} fontWeight={500}>
-                      {error || '移除'}
+                      {error || 'Remove'}
                     </Text>
                   </ButtonError>
                 </RowBetween>

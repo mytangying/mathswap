@@ -1,4 +1,4 @@
-import { ChainId, Pair, Token, Currency } from '@uniswap/sdk'
+import { ChainId, Pair, Token } from '@uniswap/sdk'
 import flatMap from 'lodash.flatmap'
 import { useCallback, useMemo } from 'react'
 import { shallowEqual, useDispatch, useSelector } from 'react-redux'
@@ -10,18 +10,14 @@ import { AppDispatch, AppState } from '../index'
 import {
   addSerializedPair,
   addSerializedToken,
-  dismissTokenWarning,
   removeSerializedToken,
   SerializedPair,
   SerializedToken,
   updateUserDarkMode,
-  updateUserChartMode,
   updateUserDeadline,
   updateUserExpertMode,
   updateUserSlippageTolerance
 } from './actions'
-import { useDefaultTokenList } from '../lists/hooks'
-import { isDefaultToken } from '../../utils'
 
 function serializeToken(token: Token): SerializedToken {
   return {
@@ -67,32 +63,6 @@ export function useDarkModeManager(): [boolean, () => void] {
   }, [darkMode, dispatch])
 
   return [darkMode, toggleSetDarkMode]
-}
-
-export function useIsChartMode(): boolean {
-  const { userChartMode, matchesChartMode } = useSelector<
-    AppState,
-    { userChartMode: boolean | null; matchesChartMode: boolean }
-  >(
-    ({ user: { matchesChartMode, userChartMode } }) => ({
-      userChartMode,
-      matchesChartMode
-    }),
-    shallowEqual
-  )
-
-  return userChartMode === null ? matchesChartMode : userChartMode
-}
-
-export function useChartModeManager(): [boolean, () => void] {
-  const dispatch = useDispatch<AppDispatch>()
-  const ChartMode = useIsChartMode()
-
-  const toggleSetChartMode = useCallback(() => {
-    dispatch(updateUserChartMode({ userChartMode: !ChartMode }))
-  }, [ChartMode, dispatch])
-
-  return [ChartMode, toggleSetChartMode]
 }
 
 export function useIsExpertMode(): boolean {
@@ -188,36 +158,6 @@ export function usePairAdder(): (pair: Pair) => void {
     },
     [dispatch]
   )
-}
-
-/**
- * Returns whether a token warning has been dismissed and a callback to dismiss it,
- * iff it has not already been dismissed and is a valid token.
- */
-export function useTokenWarningDismissal(chainId?: number, token?: Currency): [boolean, null | (() => void)] {
-  const dismissalState = useSelector<AppState, AppState['user']['dismissedTokenWarnings']>(
-    state => state.user.dismissedTokenWarnings
-  )
-
-  const dispatch = useDispatch<AppDispatch>()
-
-  // get default list, mark as dismissed if on list
-  const defaultList = useDefaultTokenList()
-  const isDefault = isDefaultToken(defaultList, token)
-
-  return useMemo(() => {
-    if (!chainId || !token) return [false, null]
-
-    const dismissed: boolean =
-      token instanceof Token ? dismissalState?.[chainId]?.[token.address] === true || isDefault : true
-
-    const callback =
-      dismissed || !(token instanceof Token)
-        ? null
-        : () => dispatch(dismissTokenWarning({ chainId, tokenAddress: token.address }))
-
-    return [dismissed, callback]
-  }, [chainId, token, dismissalState, isDefault, dispatch])
 }
 
 /**

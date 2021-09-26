@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useWeb3React } from '@web3-react/core'
 import styled from 'styled-components'
+import { useTranslation } from 'react-i18next'
 
 import { network } from '../../connectors'
 import { useEagerConnect, useInactiveListener } from '../../hooks'
@@ -18,7 +19,8 @@ const Message = styled.h2`
   color: ${({ theme }) => theme.secondary1};
 `
 
-export default function Web3ReactManager({ children }) {
+export default function Web3ReactManager({ children }: { children: JSX.Element }) {
+  const { t } = useTranslation()
   const { active } = useWeb3React()
   const { active: networkActive, error: networkError, activate: activateNetwork } = useWeb3React(NetworkContextName)
 
@@ -56,7 +58,7 @@ export default function Web3ReactManager({ children }) {
   if (!active && networkError) {
     return (
       <MessageWrapper>
-        <Message>未知错误</Message>
+        <Message>{t('unknownError')}</Message>
       </MessageWrapper>
     )
   }

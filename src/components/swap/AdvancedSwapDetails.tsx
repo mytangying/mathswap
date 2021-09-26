@@ -24,9 +24,9 @@ function TradeSummary({ trade, allowedSlippage }: { trade: Trade; allowedSlippag
         <RowBetween>
           <RowFixed>
             <TYPE.black fontSize={14} fontWeight={400} color={theme.text2}>
-              {isExactIn ? '最少获得' : '最大消耗'}
+              {isExactIn ? 'Minimum received' : 'Maximum sold'}
             </TYPE.black>
-            <QuestionHelper text="你的交易将会回滚如果再确认前有很大的价格变化。" />
+            <QuestionHelper text="Your transaction will revert if there is a large, unfavorable price movement before it is confirmed." />
           </RowFixed>
           <RowFixed>
             <TYPE.black color={theme.text1} fontSize={14}>
@@ -41,9 +41,9 @@ function TradeSummary({ trade, allowedSlippage }: { trade: Trade; allowedSlippag
         <RowBetween>
           <RowFixed>
             <TYPE.black fontSize={14} fontWeight={400} color={theme.text2}>
-              价格滑点
+              Price Impact
             </TYPE.black>
-            <QuestionHelper text="根据交易量的多少，成交价与市价的差异" />
+            <QuestionHelper text="The difference between the market price and estimated price due to trade size." />
           </RowFixed>
           <FormattedPriceImpact priceImpact={priceImpactWithoutFee} />
         </RowBetween>
@@ -51,9 +51,9 @@ function TradeSummary({ trade, allowedSlippage }: { trade: Trade; allowedSlippag
         <RowBetween>
           <RowFixed>
             <TYPE.black fontSize={14} fontWeight={400} color={theme.text2}>
-              流动性提供者费用
+              Liquidity Provider Fee
             </TYPE.black>
-            <QuestionHelper text="每笔交易的(0.30%)会给到流动性提供者" />
+            <QuestionHelper text="A portion of each trade (0.30%) goes to liquidity providers as a protocol incentive." />
           </RowFixed>
           <TYPE.black fontSize={14} color={theme.text1}>
             {realizedLPFee ? `${realizedLPFee.toSignificant(4)} ${trade.inputAmount.currency.symbol}` : '-'}
@@ -73,23 +73,27 @@ export function AdvancedSwapDetails({ trade }: AdvancedSwapDetailsProps) {
 
   const [allowedSlippage] = useUserSlippageTolerance()
 
-  const showRoute = trade?.route?.path?.length > 2
+  const showRoute = Boolean(trade && trade.route.path.length > 2)
 
   return (
     <AutoColumn gap="md">
-      {trade && <TradeSummary trade={trade} allowedSlippage={allowedSlippage} />}
-      {showRoute && (
+      {trade && (
         <>
-          <SectionBreak />
-          <AutoColumn style={{ padding: '0 24px' }}>
-            <RowFixed>
-              <TYPE.black fontSize={14} fontWeight={400} color={theme.text2}>
-                路径
-              </TYPE.black>
-              <QuestionHelper text="通过这个路径得到最优的价格" />
-            </RowFixed>
-            <SwapRoute trade={trade} />
-          </AutoColumn>
+          <TradeSummary trade={trade} allowedSlippage={allowedSlippage} />
+          {showRoute && (
+            <>
+              <SectionBreak />
+              <AutoColumn style={{ padding: '0 24px' }}>
+                <RowFixed>
+                  <TYPE.black fontSize={14} fontWeight={400} color={theme.text2}>
+                    Route
+                  </TYPE.black>
+                  <QuestionHelper text="Routing through these tokens resulted in the best price for your trade." />
+                </RowFixed>
+                <SwapRoute trade={trade} />
+              </AutoColumn>
+            </>
+          )}
         </>
       )}
     </AutoColumn>

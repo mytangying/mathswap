@@ -27,11 +27,13 @@ const HeaderFrame = styled.div`
   justify-content: space-between;
   flex-direction: column;
   width: 100%;
-  position: relative;
+  top: 0;
+  position: absolute;
   z-index: 2;
   ${({ theme }) => theme.mediaWidth.upToExtraSmall`
     padding: 12px 0 0 0;
     width: calc(100%);
+    position: relative;
   `};
 `
 
@@ -102,7 +104,7 @@ const UniIcon = styled.div`
   }
   ${({ theme }) => theme.mediaWidth.upToSmall`
     img {
-      width: 3rem;
+      width: 4.5rem;
     }
   `};
 `
@@ -129,13 +131,14 @@ const NETWORK_LABELS: { [chainId in ChainId]: string | null } = {
   [ChainId.RINKEBY]: 'Rinkeby',
   [ChainId.ROPSTEN]: 'Ropsten',
   [ChainId.GÖRLI]: 'Görli',
-  [ChainId.KOVAN]: 'Kovan'
+  [ChainId.KOVAN]: 'Kovan',
+  [ChainId.GALOIS]: 'Galois',
 }
 
 export default function Header() {
   const { account, chainId } = useActiveWeb3React()
 
-  const userEthBalance = useETHBalances([account])[account]
+  const userEthBalance = useETHBalances(account ? [account] : [])?.[account ?? '']
   const [isDark] = useDarkModeManager()
 
   return (
@@ -154,12 +157,12 @@ export default function Header() {
         <HeaderControls>
           <HeaderElement>
             <TestnetWrapper>
-              {!isMobile && NETWORK_LABELS[chainId] && <NetworkCard>{NETWORK_LABELS[chainId]}</NetworkCard>}
+              {!isMobile && chainId && NETWORK_LABELS[chainId] && <NetworkCard>{NETWORK_LABELS[chainId]}</NetworkCard>}
             </TestnetWrapper>
             <AccountElement active={!!account} style={{ pointerEvents: 'auto' }}>
               {account && userEthBalance ? (
                 <BalanceText style={{ flexShrink: 0 }} pl="0.75rem" pr="0.5rem" fontWeight={500}>
-                  {userEthBalance?.toSignificant(4)} ETH
+                  {userEthBalance?.toSignificant(6)} MATH
                 </BalanceText>
               ) : null}
               <Web3Status />

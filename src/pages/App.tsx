@@ -21,7 +21,6 @@ import RemoveLiquidity from './RemoveLiquidity'
 import { RedirectOldRemoveLiquidityPathStructure } from './RemoveLiquidity/redirects'
 import Swap from './Swap'
 import { RedirectPathToSwapOnly, RedirectToSwap } from './Swap/redirects'
-import {OpenApp,CopyWechat} from '../components/OpenApp'
 
 const AppWrapper = styled.div`
   display: flex;
@@ -40,7 +39,7 @@ const BodyWrapper = styled.div`
   display: flex;
   flex-direction: column;
   width: 100%;
-  padding-top: 80px;
+  padding-top: 160px;
   align-items: center;
   flex: 1;
   overflow-y: auto;
@@ -65,7 +64,6 @@ export default function App() {
         <Route component={GoogleAnalyticsReporter} />
         <Route component={DarkModeQueryParamReader} />
         <AppWrapper>
-          <OpenApp/>
           <HeaderWrapper>
             <Header />
           </HeaderWrapper>
@@ -89,7 +87,6 @@ export default function App() {
                 <Route exact strict path="/migrate/v1/:address" component={MigrateV1Exchange} />
                 <Route component={RedirectPathToSwapOnly} />
               </Switch>
-              <CopyWechat/>
             </Web3ReactManager>
             <Marginer />
           </BodyWrapper>

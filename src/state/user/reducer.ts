@@ -1,18 +1,15 @@
 import { INITIAL_ALLOWED_SLIPPAGE, DEFAULT_DEADLINE_FROM_NOW } from '../../constants'
 import { createReducer } from '@reduxjs/toolkit'
+import { updateVersion } from '../global/actions'
 import {
   addSerializedPair,
   addSerializedToken,
-  dismissTokenWarning,
   removeSerializedPair,
   removeSerializedToken,
   SerializedPair,
   SerializedToken,
   updateMatchesDarkMode,
   updateUserDarkMode,
-  updateMatchesChartMode,
-  updateUserChartMode,
-  updateVersion,
   updateUserExpertMode,
   updateUserSlippageTolerance,
   updateUserDeadline
@@ -27,9 +24,6 @@ export interface UserState {
   userDarkMode: boolean | null // the user's choice for dark mode or light mode
   matchesDarkMode: boolean // whether the dark mode media query matches
 
-  userChartMode: boolean | null // the user's choice for Chart mode or light mode
-  matchesChartMode: boolean // whether the Chart mode media query matches
-
   userExpertMode: boolean
 
   // user defined slippage tolerance in bips, used in all txns
@@ -41,13 +35,6 @@ export interface UserState {
   tokens: {
     [chainId: number]: {
       [address: string]: SerializedToken
-    }
-  }
-
-  // the token warnings that the user has dismissed
-  dismissedTokenWarnings?: {
-    [chainId: number]: {
-      [tokenAddress: string]: true
     }
   }
 
@@ -68,8 +55,6 @@ function pairKey(token0Address: string, token1Address: string) {
 export const initialState: UserState = {
   userDarkMode: null,
   matchesDarkMode: false,
-  userChartMode: null,
-  matchesChartMode: false,
   userExpertMode: false,
   userSlippageTolerance: INITIAL_ALLOWED_SLIPPAGE,
   userDeadline: DEFAULT_DEADLINE_FROM_NOW,
@@ -82,11 +67,13 @@ export default createReducer(initialState, builder =>
   builder
     .addCase(updateVersion, state => {
       // slippage isnt being tracked in local storage, reset to default
+      // noinspection SuspiciousTypeOfGuard
       if (typeof state.userSlippageTolerance !== 'number') {
         state.userSlippageTolerance = INITIAL_ALLOWED_SLIPPAGE
       }
 
       // deadline isnt being tracked in local storage, reset to default
+      // noinspection SuspiciousTypeOfGuard
       if (typeof state.userDeadline !== 'number') {
         state.userDeadline = DEFAULT_DEADLINE_FROM_NOW
       }
@@ -99,14 +86,6 @@ export default createReducer(initialState, builder =>
     })
     .addCase(updateMatchesDarkMode, (state, action) => {
       state.matchesDarkMode = action.payload.matchesDarkMode
-      state.timestamp = currentTimestamp()
-    })
-    .addCase(updateUserChartMode, (state, action) => {
-      state.userChartMode = action.payload.userChartMode
-      state.timestamp = currentTimestamp()
-    })
-    .addCase(updateMatchesChartMode, (state, action) => {
-      state.matchesChartMode = action.payload.matchesChartMode
       state.timestamp = currentTimestamp()
     })
     .addCase(updateUserExpertMode, (state, action) => {
@@ -130,11 +109,6 @@ export default createReducer(initialState, builder =>
       state.tokens[chainId] = state.tokens[chainId] || {}
       delete state.tokens[chainId][address]
       state.timestamp = currentTimestamp()
-    })
-    .addCase(dismissTokenWarning, (state, { payload: { chainId, tokenAddress } }) => {
-      state.dismissedTokenWarnings = state.dismissedTokenWarnings ?? {}
-      state.dismissedTokenWarnings[chainId] = state.dismissedTokenWarnings[chainId] ?? {}
-      state.dismissedTokenWarnings[chainId][tokenAddress] = true
     })
     .addCase(addSerializedPair, (state, { payload: { serializedPair } }) => {
       if (

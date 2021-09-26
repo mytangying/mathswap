@@ -3,7 +3,7 @@ import { Version } from '../../hooks/useToggledVersion'
 import { parseUnits } from '@ethersproject/units'
 import { Currency, CurrencyAmount, ETHER, JSBI, Token, TokenAmount, Trade } from '@uniswap/sdk'
 import { ParsedQs } from 'qs'
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useV1Trade } from '../../data/V1'
 import { useActiveWeb3React } from '../../hooks'
@@ -35,7 +35,7 @@ export function useSwapActionHandlers(): {
       dispatch(
         selectCurrency({
           field,
-          currencyId: currency instanceof Token ? currency.address : currency === ETHER ? 'ETH' : ''
+          currencyId: currency instanceof Token ? currency.address : currency === ETHER ? 'MATH' : ''
         })
       )
     },
@@ -71,7 +71,7 @@ export function useSwapActionHandlers(): {
 // try to parse a user entered amount for a given token
 export function tryParseAmount(value?: string, currency?: Currency): CurrencyAmount | undefined {
   if (!value || !currency) {
-    return
+    return undefined
   }
   try {
     const typedValueParsed = parseUnits(value, currency.decimals).toString()
@@ -85,7 +85,25 @@ export function tryParseAmount(value?: string, currency?: Currency): CurrencyAmo
     console.debug(`Failed to parse input amount: "${value}"`, error)
   }
   // necessary for all paths to return a value
-  return
+  return undefined
+}
+
+const BAD_RECIPIENT_ADDRESSES: string[] = [
+  '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f', // v2 factory
+  '0xf164fC0Ec4E93095b804a4795bBe1e041497b92a', // v2 router 01
+  '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D' // v2 router 02
+]
+
+/**
+ * Returns true if any of the pairs or tokens in a trade have the given checksummed address
+ * @param trade to check for the given address
+ * @param checksummedAddress address to check in the pairs and tokens
+ */
+function involvesAddress(trade: Trade, checksummedAddress: string): boolean {
+  return (
+    trade.route.path.some(token => token.address === checksummedAddress) ||
+    trade.route.pairs.some(pair => pair.liquidityToken.address === checksummedAddress)
+  )
 }
 
 // from the current swap inputs, compute the best trade and return it.
@@ -94,7 +112,7 @@ export function useDerivedSwapInfo(): {
   currencyBalances: { [field in Field]?: CurrencyAmount }
   parsedAmount: CurrencyAmount | undefined
   v2Trade: Trade | undefined
-  error?: string
+  inputError?: string
   v1Trade: Trade | undefined
 } {
   const { account } = useActiveWeb3React()
@@ -140,21 +158,30 @@ export function useDerivedSwapInfo(): {
   // get link to trade on v1, if a better rate exists
   const v1Trade = useV1Trade(isExactIn, currencies[Field.INPUT], currencies[Field.OUTPUT], parsedAmount)
 
-  let error: string | undefined
+  let inputError: string | undefined
   if (!account) {
-    error = '连接钱包'
+    inputError = 'Connect Wallet'
   }
 
   if (!parsedAmount) {
-    error = error ?? '输入数量'
+    inputError = inputError ?? 'Enter an amount'
   }
 
   if (!currencies[Field.INPUT] || !currencies[Field.OUTPUT]) {
-    error = error ?? '选择代币'
+    inputError = inputError ?? 'Select a token'
   }
 
-  if (!to) {
-    error = error ?? '输入接收地址'
+  const formattedTo = isAddress(to)
+  if (!to || !formattedTo) {
+    inputError = inputError ?? 'Enter a recipient'
+  } else {
+    if (
+      BAD_RECIPIENT_ADDRESSES.indexOf(formattedTo) !== -1 ||
+      (bestTradeExactIn && involvesAddress(bestTradeExactIn, formattedTo)) ||
+      (bestTradeExactOut && involvesAddress(bestTradeExactOut, formattedTo))
+    ) {
+      inputError = inputError ?? 'Invalid recipient'
+    }
   }
 
   const [allowedSlippage] = useUserSlippageTolerance()
@@ -177,7 +204,7 @@ export function useDerivedSwapInfo(): {
   ]
 
   if (balanceIn && amountIn && balanceIn.lessThan(amountIn)) {
-    error = amountIn.currency.symbol + ' 余额不足'
+    inputError = 'Insufficient ' + amountIn.currency.symbol + ' balance'
   }
 
   return {
@@ -185,19 +212,21 @@ export function useDerivedSwapInfo(): {
     currencyBalances,
     parsedAmount,
     v2Trade: v2Trade ?? undefined,
-    error,
+    inputError,
     v1Trade
   }
 }
 
 function parseCurrencyFromURLParameter(urlParam: any): string {
+  console.log('urlParam',urlParam);
+
   if (typeof urlParam === 'string') {
     const valid = isAddress(urlParam)
     if (valid) return valid
-    if (urlParam.toUpperCase() === 'ETH') return 'ETH'
-    if (valid === false) return 'ETH'
+    if (urlParam.toUpperCase() === 'MATH') return 'MATH'
+    if (valid === false) return 'MATH'
   }
-  return 'ETH' ?? ''
+  return 'MATH' ?? ''
 }
 
 function parseTokenAmountURLParameter(urlParam: any): string {
@@ -246,10 +275,15 @@ export function queryParametersToSwapState(parsedQs: ParsedQs): SwapState {
 }
 
 // updates the swap state to use the defaults for a given network
-export function useDefaultsFromURLSearch() {
+export function useDefaultsFromURLSearch():
+  | { inputCurrencyId: string | undefined; outputCurrencyId: string | undefined }
+  | undefined {
   const { chainId } = useActiveWeb3React()
   const dispatch = useDispatch<AppDispatch>()
   const parsedQs = useParsedQueryString()
+  const [result, setResult] = useState<
+    { inputCurrencyId: string | undefined; outputCurrencyId: string | undefined } | undefined
+  >()
 
   useEffect(() => {
     if (!chainId) return
@@ -264,6 +298,10 @@ export function useDefaultsFromURLSearch() {
         recipient: parsed.recipient
       })
     )
+
+    setResult({ inputCurrencyId: parsed[Field.INPUT].currencyId, outputCurrencyId: parsed[Field.OUTPUT].currencyId })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch, chainId])
+
+  return result
 }

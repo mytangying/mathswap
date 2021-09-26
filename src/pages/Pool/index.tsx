@@ -63,28 +63,28 @@ export default function Pool() {
         <AutoColumn gap="lg" justify="center">
           <ButtonPrimary id="join-pool-button" as={Link} style={{ padding: 16 }} to="/add/ETH">
             <Text fontWeight={500} fontSize={20}>
-              加入流动性资金池
+              Add Liquidity
             </Text>
           </ButtonPrimary>
 
           <AutoColumn gap="12px" style={{ width: '100%' }}>
             <RowBetween padding={'0 8px'}>
               <Text color={theme.text1} fontWeight={500}>
-                你的流动性资金池
+                Your Liquidity
               </Text>
-              <Question text="当你添加了流动性，会收到对应的资金池的流动性代币代表你在池子中的份额。如果你看不到你加入的资金池，尝试在下方导入。" />
+              <Question text="When you add liquidity, you are given pool tokens that represent your share. If you don’t see a pool you joined in this list, try importing a pool below." />
             </RowBetween>
 
             {!account ? (
               <LightCard padding="40px">
                 <TYPE.body color={theme.text3} textAlign="center">
-                  连接到钱包以查看您的流动性资金池
+                  Connect to a wallet to view your liquidity.
                 </TYPE.body>
               </LightCard>
             ) : v2IsLoading ? (
               <LightCard padding="40px">
                 <TYPE.body color={theme.text3} textAlign="center">
-                  <Dots>加载中</Dots>
+                  <Dots>Loading</Dots>
                 </TYPE.body>
               </LightCard>
             ) : allV2PairsWithLiquidity?.length > 0 ? (
@@ -96,16 +96,16 @@ export default function Pool() {
             ) : (
               <LightCard padding="40px">
                 <TYPE.body color={theme.text3} textAlign="center">
-                  没有发现流动性资金池
+                  No liquidity found.
                 </TYPE.body>
               </LightCard>
             )}
 
             <div>
               <Text textAlign="center" fontSize={14} style={{ padding: '.5rem 0 .5rem 0' }}>
-                {hasV1Liquidity ? '发现 Uniswap V1 的流动性资金池！' : "没有发现你参与的流动性资金池？"}{' '}
+                {hasV1Liquidity ? 'Uniswap V1 liquidity found!' : "Don't see a pool you joined?"}{' '}
                 <StyledInternalLink id="import-pool-link" to={hasV1Liquidity ? '/migrate/v1' : '/find'}>
-                  {hasV1Liquidity ? '现在迁移' : '导入'}
+                  {hasV1Liquidity ? 'Migrate now.' : 'Import it.'}
                 </StyledInternalLink>
               </Text>
             </div>
@@ -115,7 +115,7 @@ export default function Pool() {
 
       <div style={{ display: 'flex', alignItems: 'center', marginTop: '1.5rem' }}>
         <ButtonSecondary as={Link} style={{ width: 'initial' }} to="/migrate/v1">
-          迁移 V1 流动性资金池
+          Migrate V1 Liquidity
         </ButtonSecondary>
       </div>
     </>

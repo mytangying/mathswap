@@ -1,53 +1,51 @@
-import { CurrencyAmount, Percent, Trade, TradeType } from '@uniswap/sdk'
-import React, { useContext } from 'react'
+import { Trade, TradeType } from '@uniswap/sdk'
+import React, { useContext, useMemo, useState } from 'react'
 import { Repeat } from 'react-feather'
 import { Text } from 'rebass'
 import { ThemeContext } from 'styled-components'
 import { Field } from '../../state/swap/actions'
 import { TYPE } from '../../theme'
-import { formatExecutionPrice } from '../../utils/prices'
+import {
+  computeSlippageAdjustedAmounts,
+  computeTradePriceBreakdown,
+  formatExecutionPrice,
+  warningSeverity
+} from '../../utils/prices'
 import { ButtonError } from '../Button'
 import { AutoColumn } from '../Column'
 import QuestionHelper from '../QuestionHelper'
 import { AutoRow, RowBetween, RowFixed } from '../Row'
 import FormattedPriceImpact from './FormattedPriceImpact'
-import { StyledBalanceMaxMini } from './styleds'
+import { StyledBalanceMaxMini, SwapCallbackError } from './styleds'
 
 export default function SwapModalFooter({
   trade,
-  showInverted,
-  setShowInverted,
-  severity,
-  slippageAdjustedAmounts,
-  onSwap,
-  parsedAmounts,
-  realizedLPFee,
-  priceImpactWithoutFee,
-  confirmText
+  onConfirm,
+  allowedSlippage,
+  swapErrorMessage,
+  disabledConfirm
 }: {
-  trade?: Trade
-  showInverted: boolean
-  setShowInverted: (inverted: boolean) => void
-  severity: number
-  slippageAdjustedAmounts?: { [field in Field]?: CurrencyAmount }
-  onSwap: () => any
-  parsedAmounts?: { [field in Field]?: CurrencyAmount }
-  realizedLPFee?: CurrencyAmount
-  priceImpactWithoutFee?: Percent
-  confirmText: string
+  trade: Trade
+  allowedSlippage: number
+  onConfirm: () => void
+  swapErrorMessage: string | undefined
+  disabledConfirm: boolean
 }) {
+  const [showInverted, setShowInverted] = useState<boolean>(false)
   const theme = useContext(ThemeContext)
-
-  if (!trade) {
-    return null
-  }
+  const slippageAdjustedAmounts = useMemo(() => computeSlippageAdjustedAmounts(trade, allowedSlippage), [
+    allowedSlippage,
+    trade
+  ])
+  const { priceImpactWithoutFee, realizedLPFee } = useMemo(() => computeTradePriceBreakdown(trade), [trade])
+  const severity = warningSeverity(priceImpactWithoutFee)
 
   return (
     <>
       <AutoColumn gap="0px">
         <RowBetween align="center">
           <Text fontWeight={400} fontSize={14} color={theme.text2}>
-            价格
+            Price
           </Text>
           <Text
             fontWeight={500}
@@ -71,53 +69,59 @@ export default function SwapModalFooter({
         <RowBetween>
           <RowFixed>
             <TYPE.black fontSize={14} fontWeight={400} color={theme.text2}>
-              {trade?.tradeType === TradeType.EXACT_INPUT ? '最少获得' : '最大消耗'}
+              {trade.tradeType === TradeType.EXACT_INPUT ? 'Minimum received' : 'Maximum sold'}
             </TYPE.black>
-            <QuestionHelper text="你的交易将会回滚如果再确认前有很大的价格变化。" />
+            <QuestionHelper text="Your transaction will revert if there is a large, unfavorable price movement before it is confirmed." />
           </RowFixed>
           <RowFixed>
             <TYPE.black fontSize={14}>
-              {trade?.tradeType === TradeType.EXACT_INPUT
+              {trade.tradeType === TradeType.EXACT_INPUT
                 ? slippageAdjustedAmounts[Field.OUTPUT]?.toSignificant(4) ?? '-'
                 : slippageAdjustedAmounts[Field.INPUT]?.toSignificant(4) ?? '-'}
             </TYPE.black>
-            {parsedAmounts[Field.OUTPUT] && parsedAmounts[Field.INPUT] && (
-              <TYPE.black fontSize={14} marginLeft={'4px'}>
-                {trade?.tradeType === TradeType.EXACT_INPUT
-                  ? parsedAmounts[Field.OUTPUT]?.currency?.symbol
-                  : parsedAmounts[Field.INPUT]?.currency?.symbol}
-              </TYPE.black>
-            )}
+            <TYPE.black fontSize={14} marginLeft={'4px'}>
+              {trade.tradeType === TradeType.EXACT_INPUT
+                ? trade.outputAmount.currency.symbol
+                : trade.inputAmount.currency.symbol}
+            </TYPE.black>
           </RowFixed>
         </RowBetween>
         <RowBetween>
           <RowFixed>
             <TYPE.black color={theme.text2} fontSize={14} fontWeight={400}>
-              价格滑点
+              Price Impact
             </TYPE.black>
-            <QuestionHelper text="根据交易量的多少，成交价与市价的差异" />
+            <QuestionHelper text="The difference between the market price and your price due to trade size." />
           </RowFixed>
           <FormattedPriceImpact priceImpact={priceImpactWithoutFee} />
         </RowBetween>
         <RowBetween>
           <RowFixed>
             <TYPE.black fontSize={14} fontWeight={400} color={theme.text2}>
-              流动性提供者费用
+              Liquidity Provider Fee
             </TYPE.black>
-            <QuestionHelper text="每笔交易的(0.30%)会给到流动性提供者" />
+            <QuestionHelper text="A portion of each trade (0.30%) goes to liquidity providers as a protocol incentive." />
           </RowFixed>
           <TYPE.black fontSize={14}>
-            {realizedLPFee ? realizedLPFee?.toSignificant(6) + ' ' + trade?.inputAmount?.currency?.symbol : '-'}
+            {realizedLPFee ? realizedLPFee?.toSignificant(6) + ' ' + trade.inputAmount.currency.symbol : '-'}
           </TYPE.black>
         </RowBetween>
       </AutoColumn>
 
       <AutoRow>
-        <ButtonError onClick={onSwap} error={severity > 2} style={{ margin: '10px 0 0 0' }} id="confirm-swap-or-send">
+        <ButtonError
+          onClick={onConfirm}
+          disabled={disabledConfirm}
+          error={severity > 2}
+          style={{ margin: '10px 0 0 0' }}
+          id="confirm-swap-or-send"
+        >
           <Text fontSize={20} fontWeight={500}>
-            {confirmText}
+            {severity > 2 ? 'Swap Anyway' : 'Confirm Swap'}
           </Text>
         </ButtonError>
+
+        {swapErrorMessage ? <SwapCallbackError error={swapErrorMessage} /> : null}
       </AutoRow>
     </>
   )

@@ -31,25 +31,29 @@ export default function CommonBases({
   selectedCurrency
 }: {
   chainId?: ChainId
-  selectedCurrency?: Currency
+  selectedCurrency?: Currency | null
   onSelect: (currency: Currency) => void
 }) {
   return (
     <AutoColumn gap="md">
       <AutoRow>
         <Text fontWeight={500} fontSize={14}>
-          共同基础
+          Common bases
         </Text>
-        <QuestionHelper text="这些代币通常成对使用。" />
+        <QuestionHelper text="These tokens are commonly paired with other tokens." />
       </AutoRow>
       <AutoRow gap="4px">
         <BaseWrapper
-          onClick={() => !currencyEquals(selectedCurrency, ETHER) && onSelect(ETHER)}
+          onClick={() => {
+            if (!selectedCurrency || !currencyEquals(selectedCurrency, ETHER)) {
+              onSelect(ETHER)
+            }
+          }}
           disable={selectedCurrency === ETHER}
         >
           <CurrencyLogo currency={ETHER} style={{ marginRight: 8 }} />
           <Text fontWeight={500} fontSize={16}>
-            ETH
+            MATH
           </Text>
         </BaseWrapper>
         {(chainId ? SUGGESTED_BASES[chainId] : []).map((token: Token) => {

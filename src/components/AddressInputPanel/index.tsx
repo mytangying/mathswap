@@ -65,11 +65,6 @@ const Input = styled.input<{ error?: boolean }>`
   }
 `
 
-interface Value {
-  address: string
-  name?: string
-}
-
 export default function AddressInputPanel({
   id,
   value,
@@ -104,11 +99,11 @@ export default function AddressInputPanel({
           <AutoColumn gap="md">
             <RowBetween>
               <TYPE.black color={theme.text2} fontWeight={500} fontSize={14}>
-                接收地址
+                Recipient
               </TYPE.black>
-              {address && (
+              {address && chainId && (
                 <ExternalLink href={getEtherscanLink(chainId, name ?? address, 'address')} style={{ fontSize: '14px' }}>
-                  (在Etherscan中查看)
+                  (View on Etherscan)
                 </ExternalLink>
               )}
             </RowBetween>
@@ -119,7 +114,7 @@ export default function AddressInputPanel({
               autoCorrect="off"
               autoCapitalize="off"
               spellCheck="false"
-              placeholder="钱包地址或ENS"
+              placeholder="Wallet Address or ENS name"
               error={error}
               pattern="^(0x[a-fA-F0-9]{40})$"
               onChange={handleInput}

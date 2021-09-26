@@ -58,7 +58,7 @@ function V1PairRemoval({
     : new TokenAmount(token, ZERO)
 
   const addTransaction = useTransactionAdder()
-  const isRemovalPending = useIsTransactionPending(pendingRemovalHash)
+  const isRemovalPending = useIsTransactionPending(pendingRemovalHash ?? undefined)
 
   const remove = useCallback(() => {
     if (!liquidityTokenAmount) return
@@ -79,11 +79,11 @@ function V1PairRemoval({
         })
 
         addTransaction(response, {
-          summary: `Remove ${token.equals(WETH[chainId]) ? 'WETH' : token.symbol}/ETH V1 liquidity`
+          summary: `Remove ${chainId && token.equals(WETH[chainId]) ? 'WETH' : token.symbol}/ETH V1 liquidity`
         })
         setPendingRemovalHash(response.hash)
       })
-      .catch(error => {
+      .catch((error: Error) => {
         console.error(error)
         setConfirmingRemoval(false)
       })
@@ -91,12 +91,12 @@ function V1PairRemoval({
 
   const noLiquidityTokens = !!liquidityTokenAmount && liquidityTokenAmount.equalTo(ZERO)
 
-  const isSuccessfullyRemoved = !!pendingRemovalHash && !!noLiquidityTokens
+  const isSuccessfullyRemoved = !!pendingRemovalHash && noLiquidityTokens
 
   return (
     <AutoColumn gap="20px">
       <TYPE.body my={9} style={{ fontWeight: 400 }}>
-        该工具将删除您的V1流动性资产，并将相关资产发送到您的钱包。
+        This tool will remove your V1 liquidity and send the underlying assets to your wallet.
       </TYPE.body>
 
       <LightCard>
@@ -113,14 +113,14 @@ function V1PairRemoval({
             disabled={isSuccessfullyRemoved || noLiquidityTokens || isRemovalPending || confirmingRemoval}
             onClick={remove}
           >
-            {isSuccessfullyRemoved ? '成功' : isRemovalPending ? <Dots>移除中</Dots> : '移除'}
+            {isSuccessfullyRemoved ? 'Success' : isRemovalPending ? <Dots>Removing</Dots> : 'Remove'}
           </ButtonConfirmed>
         </div>
       </LightCard>
       <TYPE.darkGray style={{ textAlign: 'center' }}>
-        {`您的Uniswap V1 ${
-          token.equals(WETH[chainId]) ? 'WETH' : token.symbol
-        }/ETH 流动性资产将被赎回为基础资产。`}
+        {`Your Uniswap V1 ${
+          chainId && token.equals(WETH[chainId]) ? 'WETH' : token.symbol
+        }/ETH liquidity will be redeemed for underlying assets.`}
       </TYPE.darkGray>
     </AutoColumn>
   )
@@ -140,16 +140,16 @@ export default function RemoveV1Exchange({
 
   const liquidityToken: Token | undefined = useMemo(
     () =>
-      validatedAddress && token
+      validatedAddress && chainId && token
         ? new Token(chainId, validatedAddress, 18, `UNI-V1-${token.symbol}`, 'Uniswap V1')
         : undefined,
     [chainId, validatedAddress, token]
   )
-  const userLiquidityBalance = useTokenBalance(account, liquidityToken)
+  const userLiquidityBalance = useTokenBalance(account ?? undefined, liquidityToken)
 
   // redirect for invalid url params
   if (!validatedAddress || tokenAddress === AddressZero) {
-    console.error('路径中的地址无效', address)
+    console.error('Invalid address in path', address)
     return <Redirect to="/migrate/v1" />
   }
 
@@ -158,22 +158,22 @@ export default function RemoveV1Exchange({
       <AutoColumn gap="16px">
         <AutoRow style={{ alignItems: 'center', justifyContent: 'space-between' }} gap="8px">
           <BackArrow to="/migrate/v1" />
-          <TYPE.mediumHeader>删除V1流动性资产</TYPE.mediumHeader>
+          <TYPE.mediumHeader>Remove V1 Liquidity</TYPE.mediumHeader>
           <div>
-            <QuestionHelper text="删除Uniswap V1流动性矿池代币" />
+            <QuestionHelper text="Remove your Uniswap V1 liquidity tokens." />
           </div>
         </AutoRow>
 
         {!account ? (
-          <TYPE.largeHeader>您必须连接一个账号</TYPE.largeHeader>
-        ) : userLiquidityBalance && token ? (
+          <TYPE.largeHeader>You must connect an account.</TYPE.largeHeader>
+        ) : userLiquidityBalance && token && exchangeContract ? (
           <V1PairRemoval
             exchangeContract={exchangeContract}
             liquidityTokenAmount={userLiquidityBalance}
             token={token}
           />
         ) : (
-          <EmptyState message="加载中..." />
+          <EmptyState message="Loading..." />
         )}
       </AutoColumn>
     </BodyWrapper>

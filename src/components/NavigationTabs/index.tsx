@@ -1,6 +1,7 @@
 import React from 'react'
 import styled from 'styled-components'
 import { darken } from 'polished'
+import { useTranslation } from 'react-i18next'
 import { NavLink, Link as HistoryLink } from 'react-router-dom'
 
 import { ArrowLeft } from 'react-feather'
@@ -52,13 +53,14 @@ const StyledArrowLeft = styled(ArrowLeft)`
 `
 
 export function SwapPoolTabs({ active }: { active: 'swap' | 'pool' }) {
+  const { t } = useTranslation()
   return (
     <Tabs style={{ marginBottom: '20px' }}>
       <StyledNavLink id={`swap-nav-link`} to={'/swap'} isActive={() => active === 'swap'}>
-        兑换
+        {t('swap')}
       </StyledNavLink>
       <StyledNavLink id={`pool-nav-link`} to={'/pool'} isActive={() => active === 'pool'}>
-        资金池
+        {t('pool')}
       </StyledNavLink>
     </Tabs>
   )
@@ -71,8 +73,8 @@ export function FindPoolTabs() {
         <HistoryLink to="/pool">
           <StyledArrowLeft />
         </HistoryLink>
-        <ActiveText>导入流动性池</ActiveText>
-        <QuestionHelper text={"使用此工具查找不会自动出现在界面中的交易对"} />
+        <ActiveText>Import Pool</ActiveText>
+        <QuestionHelper text={"Use this tool to find pairs that don't automatically appear in the interface."} />
       </RowBetween>
     </Tabs>
   )
@@ -85,12 +87,12 @@ export function AddRemoveTabs({ adding }: { adding: boolean }) {
         <HistoryLink to="/pool">
           <StyledArrowLeft />
         </HistoryLink>
-        <ActiveText>{adding ? '添加' : '移除'} 流动性资金池</ActiveText>
+        <ActiveText>{adding ? 'Add' : 'Remove'} Liquidity</ActiveText>
         <QuestionHelper
           text={
             adding
-              ? '当你添加了流动性，会收到对应的资金池的流动性代币代表你在池子中的份额。 这些代币会按比例自动赚取在这个资金池中交易的手续费，并且可以随时赎回对应比例的资金。'
-              : '移除资金池中代币会按照您在资金池中所占比例，将您的定位按比例转换回基础代币。 累计费用已包含在您收到的金额中。'
+              ? 'When you add liquidity, you are given pool tokens representing your position. These tokens automatically earn fees proportional to your share of the pool, and can be redeemed at any time.'
+              : 'Removing pool tokens converts your position back into underlying tokens at the current rate, proportional to your share of the pool. Accrued fees are included in the amounts you receive.'
           }
         />
       </RowBetween>

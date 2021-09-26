@@ -1,3 +1,5 @@
+import { Web3Provider } from '@ethersproject/providers'
+import { ChainId } from '@uniswap/sdk'
 import { InjectedConnector } from '@web3-react/injected-connector'
 import { WalletConnectConnector } from '@web3-react/walletconnect-connector'
 import { WalletLinkConnector } from '@web3-react/walletlink-connector'
@@ -10,21 +12,44 @@ const NETWORK_URL = process.env.REACT_APP_NETWORK_URL
 const FORMATIC_KEY = process.env.REACT_APP_FORTMATIC_KEY
 const PORTIS_ID = process.env.REACT_APP_PORTIS_ID
 
+const NETWORK_URLS: { [key in ChainId]: string } = {
+  [ChainId.MAINNET]: `https://mainnet.infura.io/v3/`,
+  [ChainId.ROPSTEN]: `https://ropsten.infura.io/v3/`,
+  [ChainId.RINKEBY]: `https://rinkeby.infura.io/v3/`,
+  [ChainId.GÖRLI]: `https://galois.maiziqianbao.net/rpc`,
+  [ChainId.KOVAN]: `https://kovan.infura.io/v3/`,
+  [ChainId.GALOIS]: `https://galois.maiziqianbao.net/rpc`,
+}
+const ALL_SUPPORTED_CHAIN_IDS: ChainId[] = [
+  ChainId.MAINNET,
+  ChainId.ROPSTEN,
+  ChainId.RINKEBY,
+  ChainId.GÖRLI,
+  ChainId.KOVAN,
+  ChainId.GALOIS,
+]
+export const NETWORK_CHAIN_ID: number = parseInt(process.env.REACT_APP_CHAIN_ID ?? '1')
+
 if (typeof NETWORK_URL === 'undefined') {
   throw new Error(`REACT_APP_NETWORK_URL must be a defined environment variable`)
 }
-
 export const network = new NetworkConnector({
-  urls: { [Number(process.env.REACT_APP_CHAIN_ID)]: NETWORK_URL }
+  urls: NETWORK_URLS,
+  defaultChainId: 1140,
 })
+
+let networkLibrary: Web3Provider | undefined
+export function getNetworkLibrary(): Web3Provider {
+  return (networkLibrary = networkLibrary ?? new Web3Provider(network.provider as any))
+}
 
 export const injected = new InjectedConnector({
-  supportedChainIds: [1, 3, 4, 5, 42]
+  supportedChainIds: ALL_SUPPORTED_CHAIN_IDS,
 })
 
-// mainnet only
 export const walletconnect = new WalletConnectConnector({
-  rpc: { 1: NETWORK_URL },
+  // rpc: NETWORK_URLS,
+  rpc: { [ChainId.GALOIS]: `https://galois.maiziqianbao.net/rpc` },
   bridge: 'https://bridge.walletconnect.org',
   qrcode: true,
   pollingInterval: 15000
@@ -44,7 +69,7 @@ export const portis = new PortisConnector({
 
 // mainnet only
 export const walletlink = new WalletLinkConnector({
-  url: NETWORK_URL,
+  url: NETWORK_URLS[ChainId.MAINNET],
   appName: 'Uniswap',
   appLogoUrl:
     'https://mpng.pngfly.com/20181202/bex/kisspng-emoji-domain-unicorn-pin-badges-sticker-unicorn-tumblr-emoji-unicorn-iphoneemoji-5c046729264a77.5671679315437924251569.jpg'

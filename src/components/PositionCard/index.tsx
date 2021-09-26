@@ -46,7 +46,7 @@ export function MinimalPositionCard({ pair, showUnwrapped = false, border }: Pos
 
   const [showMore, setShowMore] = useState(false)
 
-  const userPoolBalance = useTokenBalance(account, pair.liquidityToken)
+  const userPoolBalance = useTokenBalance(account ?? undefined, pair.liquidityToken)
   const totalPoolTokens = useTotalSupply(pair.liquidityToken)
 
   const [token0Deposited, token1Deposited] =
@@ -69,7 +69,7 @@ export function MinimalPositionCard({ pair, showUnwrapped = false, border }: Pos
             <FixedHeightRow>
               <RowFixed>
                 <Text fontWeight={500} fontSize={16}>
-                  你的份额
+                  Your position
                 </Text>
               </RowFixed>
             </FixedHeightRow>
@@ -131,7 +131,7 @@ export default function FullPositionCard({ pair, border }: PositionCardProps) {
 
   const [showMore, setShowMore] = useState(false)
 
-  const userPoolBalance = useTokenBalance(account, pair.liquidityToken)
+  const userPoolBalance = useTokenBalance(account ?? undefined, pair.liquidityToken)
   const totalPoolTokens = useTotalSupply(pair.liquidityToken)
 
   const poolTokenPercentage =
@@ -174,7 +174,7 @@ export default function FullPositionCard({ pair, border }: PositionCardProps) {
             <FixedHeightRow>
               <RowFixed>
                 <Text fontSize={16} fontWeight={500}>
-                  流动池中的 {currency0.symbol}:
+                  Pooled {currency0.symbol}:
                 </Text>
               </RowFixed>
               {token0Deposited ? (
@@ -192,7 +192,7 @@ export default function FullPositionCard({ pair, border }: PositionCardProps) {
             <FixedHeightRow>
               <RowFixed>
                 <Text fontSize={16} fontWeight={500}>
-                  流动池中的 {currency1.symbol}:
+                  Pooled {currency1.symbol}:
                 </Text>
               </RowFixed>
               {token1Deposited ? (
@@ -208,7 +208,7 @@ export default function FullPositionCard({ pair, border }: PositionCardProps) {
             </FixedHeightRow>
             <FixedHeightRow>
               <Text fontSize={16} fontWeight={500}>
-                你的资金池代币:
+                Your pool tokens:
               </Text>
               <Text fontSize={16} fontWeight={500}>
                 {userPoolBalance ? userPoolBalance.toSignificant(4) : '-'}
@@ -216,7 +216,7 @@ export default function FullPositionCard({ pair, border }: PositionCardProps) {
             </FixedHeightRow>
             <FixedHeightRow>
               <Text fontSize={16} fontWeight={500}>
-                你的资金池份额:
+                Your pool share:
               </Text>
               <Text fontSize={16} fontWeight={500}>
                 {poolTokenPercentage ? poolTokenPercentage.toFixed(2) + '%' : '-'}
@@ -225,15 +225,15 @@ export default function FullPositionCard({ pair, border }: PositionCardProps) {
 
             <AutoRow justify="center" marginTop={'10px'}>
               <ExternalLink href={`https://uniswap.info/pair/${pair.liquidityToken.address}`}>
-                查看资金池信息 ↗
+                View pool information ↗
               </ExternalLink>
             </AutoRow>
             <RowBetween marginTop="10px">
               <ButtonSecondary as={Link} to={`/add/${currencyId(currency0)}/${currencyId(currency1)}`} width="48%">
-                添加
+                Add
               </ButtonSecondary>
               <ButtonSecondary as={Link} width="48%" to={`/remove/${currencyId(currency0)}/${currencyId(currency1)}`}>
-                移除
+                Remove
               </ButtonSecondary>
             </RowBetween>
           </AutoColumn>

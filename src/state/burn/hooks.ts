@@ -119,11 +119,11 @@ export function useDerivedBurnInfo(
 
   let error: string | undefined
   if (!account) {
-    error = '连接钱包'
+    error = 'Connect Wallet'
   }
 
   if (!parsedAmounts[Field.LIQUIDITY] || !parsedAmounts[Field.CURRENCY_A] || !parsedAmounts[Field.CURRENCY_B]) {
-    error = error ?? '输入数量'
+    error = error ?? 'Enter an amount'
   }
 
   return { pair, parsedAmounts, error }

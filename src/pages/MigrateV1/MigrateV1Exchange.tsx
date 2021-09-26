@@ -67,14 +67,14 @@ export function V1LiquidityInfo({
         <div style={{ marginLeft: '.75rem' }}>
           <TYPE.mediumHeader>
             {<FormattedPoolCurrencyAmount currencyAmount={liquidityTokenAmount} />}{' '}
-            {token.equals(WETH[chainId]) ? 'WETH' : token.symbol}/ETH
+            {chainId && token.equals(WETH[chainId]) ? 'WETH' : token.symbol}/ETH
           </TYPE.mediumHeader>
         </div>
       </AutoRow>
 
       <RowBetween my="1rem">
         <Text fontSize={16} fontWeight={500}>
-          流动池中的 {token.equals(WETH[chainId]) ? 'WETH' : token.symbol}:
+          Pooled {chainId && token.equals(WETH[chainId]) ? 'WETH' : token.symbol}:
         </Text>
         <RowFixed>
           <Text fontSize={16} fontWeight={500} marginLeft={'6px'}>
@@ -85,7 +85,7 @@ export function V1LiquidityInfo({
       </RowBetween>
       <RowBetween mb="1rem">
         <Text fontSize={16} fontWeight={500}>
-          流动池中的 ETH:
+          Pooled ETH:
         </Text>
         <RowFixed>
           <Text fontSize={16} fontWeight={500} marginLeft={'6px'}>
@@ -107,7 +107,7 @@ function V1PairMigration({ liquidityTokenAmount, token }: { liquidityTokenAmount
   const [v2PairState, v2Pair] = usePair(chainId ? WETH[chainId] : undefined, token)
   const isFirstLiquidityProvider: boolean = v2PairState === PairState.NOT_EXISTS
 
-  const v2SpotPrice = v2Pair?.reserveOf(token)?.divide(v2Pair?.reserveOf(WETH[chainId]))
+  const v2SpotPrice = chainId && v2Pair ? v2Pair.reserveOf(token).divide(v2Pair.reserveOf(WETH[chainId])) : undefined
 
   const [confirmingMigration, setConfirmingMigration] = useState<boolean>(false)
   const [pendingMigrationHash, setPendingMigrationHash] = useState<string | null>(null)
@@ -158,11 +158,11 @@ function V1PairMigration({ liquidityTokenAmount, token }: { liquidityTokenAmount
       : tokenWorth?.numerator
 
   const addTransaction = useTransactionAdder()
-  const isMigrationPending = useIsTransactionPending(pendingMigrationHash)
+  const isMigrationPending = useIsTransactionPending(pendingMigrationHash ?? undefined)
 
   const migrator = useV2MigratorContract()
   const migrate = useCallback(() => {
-    if (!minAmountToken || !minAmountETH) return
+    if (!minAmountToken || !minAmountETH || !migrator) return
 
     setConfirmingMigration(true)
     migrator
@@ -194,26 +194,30 @@ function V1PairMigration({ liquidityTokenAmount, token }: { liquidityTokenAmount
 
   const largePriceDifference = !!priceDifferenceAbs && !priceDifferenceAbs.lessThan(JSBI.BigInt(5))
 
-  const isSuccessfullyMigrated = !!pendingMigrationHash && !!noLiquidityTokens
+  const isSuccessfullyMigrated = !!pendingMigrationHash && noLiquidityTokens
 
   return (
     <AutoColumn gap="20px">
       <TYPE.body my={9} style={{ fontWeight: 400 }}>
-        该工具安全地将V1的流动性资产迁移到V2，价格风险最小。这个过程是完全不可信的，多亏了
-        <ExternalLink href={getEtherscanLink(chainId, MIGRATOR_ADDRESS, 'address')}>
-          <TYPE.blue display="inline">Uniswap 迁移合同↗</TYPE.blue>
-        </ExternalLink>
+        This tool will safely migrate your V1 liquidity to V2 with minimal price risk. The process is completely
+        trustless thanks to the{' '}
+        {chainId && (
+          <ExternalLink href={getEtherscanLink(chainId, MIGRATOR_ADDRESS, 'address')}>
+            <TYPE.blue display="inline">Uniswap migration contract↗</TYPE.blue>
+          </ExternalLink>
+        )}
         .
       </TYPE.body>
 
       {!isFirstLiquidityProvider && largePriceDifference ? (
         <YellowCard>
           <TYPE.body style={{ marginBottom: 8, fontWeight: 400 }}>
-            最好将流动性资产以你认为正确的价格存入Uniswap V2。如果V2价格看起来不正确，你可以进行兑换来改变价格或者等待其他人这样做。
+            It{"'"}s best to deposit liquidity into Uniswap V2 at a price you believe is correct. If the V2 price seems
+            incorrect, you can either make a swap to move the price or wait for someone else to do so.
           </TYPE.body>
           <AutoColumn gap="8px">
             <RowBetween>
-              <TYPE.body>V1 价格:</TYPE.body>
+              <TYPE.body>V1 Price:</TYPE.body>
               <TYPE.black>
                 {v1SpotPrice?.toSignificant(6)} {token.symbol}/ETH
               </TYPE.black>
@@ -226,7 +230,7 @@ function V1PairMigration({ liquidityTokenAmount, token }: { liquidityTokenAmount
             </RowBetween>
 
             <RowBetween>
-              <TYPE.body>V2 价格:</TYPE.body>
+              <TYPE.body>V2 Price:</TYPE.body>
               <TYPE.black>
                 {v2SpotPrice?.toSignificant(6)} {token.symbol}/ETH
               </TYPE.black>
@@ -239,8 +243,8 @@ function V1PairMigration({ liquidityTokenAmount, token }: { liquidityTokenAmount
             </RowBetween>
 
             <RowBetween>
-              <TYPE.body color="inherit">差价:</TYPE.body>
-              <TYPE.black color="inherit">{priceDifferenceAbs.toSignificant(4)}%</TYPE.black>
+              <TYPE.body color="inherit">Price Difference:</TYPE.body>
+              <TYPE.black color="inherit">{priceDifferenceAbs?.toSignificant(4)}%</TYPE.black>
             </RowBetween>
           </AutoColumn>
         </YellowCard>
@@ -249,12 +253,13 @@ function V1PairMigration({ liquidityTokenAmount, token }: { liquidityTokenAmount
       {isFirstLiquidityProvider && (
         <PinkCard>
           <TYPE.body style={{ marginBottom: 8, fontWeight: 400 }}>
-            您是Uniswap V2上这对交易对的第一位流动性资金池提供者。 您的流动资金将在当前的V1价格。 您的交易成本还包括创建资金池的费用。
+            You are the first liquidity provider for this pair on Uniswap V2. Your liquidity will be migrated at the
+            current V1 price. Your transaction cost also includes the gas to create the pool.
           </TYPE.body>
 
           <AutoColumn gap="8px">
             <RowBetween>
-              <TYPE.body>V1 价格:</TYPE.body>
+              <TYPE.body>V1 Price:</TYPE.body>
               <TYPE.black>
                 {v1SpotPrice?.toSignificant(6)} {token.symbol}/ETH
               </TYPE.black>
@@ -285,11 +290,11 @@ function V1PairMigration({ liquidityTokenAmount, token }: { liquidityTokenAmount
               onClick={approve}
             >
               {approval === ApprovalState.PENDING ? (
-                <Dots>授权中</Dots>
+                <Dots>Approving</Dots>
               ) : approval === ApprovalState.APPROVED ? (
-                '已授权'
+                'Approved'
               ) : (
-                '授权'
+                'Approve'
               )}
             </ButtonConfirmed>
           </AutoColumn>
@@ -305,13 +310,13 @@ function V1PairMigration({ liquidityTokenAmount, token }: { liquidityTokenAmount
               }
               onClick={migrate}
             >
-              {isSuccessfullyMigrated ? '成功' : isMigrationPending ? <Dots>迁移中</Dots> : '迁移'}
+              {isSuccessfullyMigrated ? 'Success' : isMigrationPending ? <Dots>Migrating</Dots> : 'Migrate'}
             </ButtonConfirmed>
           </AutoColumn>
         </div>
       </LightCard>
       <TYPE.darkGray style={{ textAlign: 'center' }}>
-        {`你的 Uniswap V1 ${token.symbol}/ETH 流动资金 将会变成 Uniswap V2 ${token.symbol}/ETH 流动资金.`}
+        {`Your Uniswap V1 ${token.symbol}/ETH liquidity will become Uniswap V2 ${token.symbol}/ETH liquidity.`}
       </TYPE.darkGray>
     </AutoColumn>
   )
@@ -333,16 +338,16 @@ export default function MigrateV1Exchange({
 
   const liquidityToken: Token | undefined = useMemo(
     () =>
-      validatedAddress && token
+      validatedAddress && chainId && token
         ? new Token(chainId, validatedAddress, 18, `UNI-V1-${token.symbol}`, 'Uniswap V1')
         : undefined,
     [chainId, validatedAddress, token]
   )
-  const userLiquidityBalance = useTokenBalance(account, liquidityToken)
+  const userLiquidityBalance = useTokenBalance(account ?? undefined, liquidityToken)
 
   // redirect for invalid url params
   if (!validatedAddress || tokenAddress === AddressZero) {
-    console.error('路径中的地址无效', address)
+    console.error('Invalid address in path', address)
     return <Redirect to="/migrate/v1" />
   }
 
@@ -351,18 +356,19 @@ export default function MigrateV1Exchange({
       <AutoColumn gap="16px">
         <AutoRow style={{ alignItems: 'center', justifyContent: 'space-between' }} gap="8px">
           <BackArrow to="/migrate/v1" />
-          <TYPE.mediumHeader>迁移V1流动性</TYPE.mediumHeader>
+          <TYPE.mediumHeader>Migrate V1 Liquidity</TYPE.mediumHeader>
           <div>
-            <QuestionHelper text="将您的流动性代币从 Uniswap V1 迁移到 Uniswap V2。" />
+            <QuestionHelper text="Migrate your liquidity tokens from Uniswap V1 to Uniswap V2." />
           </div>
         </AutoRow>
 
         {!account ? (
-          <TYPE.largeHeader>您必须连接一个账号</TYPE.largeHeader>
-        ) : validatedAddress && token?.equals(WETH[chainId]) ? (
+          <TYPE.largeHeader>You must connect an account.</TYPE.largeHeader>
+        ) : validatedAddress && chainId && token?.equals(WETH[chainId]) ? (
           <>
             <TYPE.body my={9} style={{ fontWeight: 400 }}>
-              由于Uniswap V2在后台使用WETH，因此您的Uniswap V1 WETH/ETH流动性无法迁移。 您可能想取消您的流动性。
+              Because Uniswap V2 uses WETH under the hood, your Uniswap V1 WETH/ETH liquidity cannot be migrated. You
+              may want to remove your liquidity instead.
             </TYPE.body>
 
             <ButtonConfirmed
@@ -370,13 +376,13 @@ export default function MigrateV1Exchange({
                 history.push(`/remove/v1/${validatedAddress}`)
               }}
             >
-              移除
+              Remove
             </ButtonConfirmed>
           </>
         ) : userLiquidityBalance && token ? (
           <V1PairMigration liquidityTokenAmount={userLiquidityBalance} token={token} />
         ) : (
-          <EmptyState message="加载中..." />
+          <EmptyState message="Loading..." />
         )}
       </AutoColumn>
     </BodyWrapper>
