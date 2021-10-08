@@ -1,4 +1,8 @@
-import React, { useRef, useContext, useState } from 'react'
+import React, {
+  useRef,
+  // useContext,
+  useState
+} from 'react'
 import { Settings, X } from 'react-feather'
 import styled from 'styled-components'
 import { useOnClickOutside } from '../../hooks/useOnClickOutside'
@@ -6,14 +10,14 @@ import {
   useUserSlippageTolerance,
   useExpertModeManager,
   useUserDeadline,
-  useDarkModeManager
+  // useDarkModeManager
 } from '../../state/user/hooks'
 import TransactionSettings from '../TransactionSettings'
-import { RowFixed, RowBetween } from '../Row'
-import { TYPE } from '../../theme'
-import QuestionHelper from '../QuestionHelper'
-import Toggle from '../Toggle'
-import { ThemeContext } from 'styled-components'
+import { RowBetween } from '../Row'
+// import { TYPE } from '../../theme'
+// import QuestionHelper from '../QuestionHelper'
+// import Toggle from '../Toggle'
+// import { ThemeContext } from 'styled-components'
 import { AutoColumn } from '../Column'
 import { ButtonError } from '../Button'
 import { useSettingsMenuOpen, useToggleSettingsMenu } from '../../state/application/hooks'
@@ -100,9 +104,11 @@ const MenuFlyout = styled.span`
   right: 0rem;
   z-index: 100;
 
-  ${({ theme }) => theme.mediaWidth.upToExtraSmall`
+  ${({ theme }) => theme.mediaWidth.upToSmall`
     min-width: 18.125rem;
     right: -46px;
+    top: auto;
+    bottom: 3rem;
   `};
 `
 
@@ -126,14 +132,14 @@ export default function SettingsTab() {
   const open = useSettingsMenuOpen()
   const toggle = useToggleSettingsMenu()
 
-  const theme = useContext(ThemeContext)
+  // const theme = useContext(ThemeContext)
   const [userSlippageTolerance, setUserslippageTolerance] = useUserSlippageTolerance()
 
   const [deadline, setDeadline] = useUserDeadline()
 
   const [expertMode, toggleExpertMode] = useExpertModeManager()
 
-  const [darkMode, toggleDarkMode] = useDarkModeManager()
+  // const [darkMode, toggleDarkMode] = useDarkModeManager()
 
   // show confirmation view before turning on
   const [showConfirmation, setShowConfirmation] = useState(false)
@@ -202,7 +208,7 @@ export default function SettingsTab() {
               deadline={deadline}
               setDeadline={setDeadline}
             />
-            <Text fontWeight={600} fontSize={14}>
+            {/* <Text fontWeight={600} fontSize={14}>
               Interface Settings
             </Text>
             <RowBetween>
@@ -227,15 +233,15 @@ export default function SettingsTab() {
                       }
                 }
               />
-            </RowBetween>
-            <RowBetween>
+            </RowBetween> */}
+            {/* <RowBetween>
               <RowFixed>
                 <TYPE.black fontWeight={400} fontSize={14} color={theme.text2}>
                   Toggle Dark Mode
                 </TYPE.black>
               </RowFixed>
               <Toggle isActive={darkMode} toggle={toggleDarkMode} />
-            </RowBetween>
+            </RowBetween> */}
           </AutoColumn>
         </MenuFlyout>
       )}

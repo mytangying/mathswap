@@ -14,7 +14,7 @@ export * from './components'
 
 const MEDIA_WIDTHS = {
   upToExtraSmall: 500,
-  upToSmall: 600,
+  upToSmall: 760,
   upToMedium: 960,
   upToLarge: 1280
 }
@@ -59,7 +59,7 @@ export function colors(darkMode: boolean): Colors {
     advancedBG: darkMode ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.6)',
 
     //primary colors
-    primary1: darkMode ? '#2172E5' : '#ff007a',
+    primary1: darkMode ? '#2172E5' : '#e6007a',
     primary2: darkMode ? '#3680E7' : '#FF8CC3',
     primary3: darkMode ? '#4D8FEA' : '#FF99C9',
     primary4: darkMode ? '#376bad70' : '#F6DDE8',

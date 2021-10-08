@@ -1,5 +1,5 @@
 import { Web3Provider } from '@ethersproject/providers'
-import { ChainId } from '@uniswap/sdk'
+import { ChainId } from 'mathswap-sdk'
 import { InjectedConnector } from '@web3-react/injected-connector'
 import { WalletConnectConnector } from '@web3-react/walletconnect-connector'
 import { WalletLinkConnector } from '@web3-react/walletlink-connector'
@@ -13,20 +13,16 @@ const FORMATIC_KEY = process.env.REACT_APP_FORTMATIC_KEY
 const PORTIS_ID = process.env.REACT_APP_PORTIS_ID
 
 const NETWORK_URLS: { [key in ChainId]: string } = {
-  [ChainId.MAINNET]: `https://mainnet.infura.io/v3/`,
-  [ChainId.ROPSTEN]: `https://ropsten.infura.io/v3/`,
-  [ChainId.RINKEBY]: `https://rinkeby.infura.io/v3/`,
-  [ChainId.GÖRLI]: `https://galois.maiziqianbao.net/rpc`,
-  [ChainId.KOVAN]: `https://kovan.infura.io/v3/`,
-  [ChainId.GALOIS]: `https://galois.maiziqianbao.net/rpc`,
+  [ChainId.MAINNET]: `https://mathchain-asia.maiziqianbao.net/rpc`,
+  [ChainId.TESTNET]: `https://galois.maiziqianbao.net/rpc`,
 }
 const ALL_SUPPORTED_CHAIN_IDS: ChainId[] = [
   ChainId.MAINNET,
-  ChainId.ROPSTEN,
-  ChainId.RINKEBY,
-  ChainId.GÖRLI,
-  ChainId.KOVAN,
-  ChainId.GALOIS,
+  // ChainId.ROPSTEN,
+  // ChainId.RINKEBY,
+  // ChainId.GÖRLI,
+  // ChainId.KOVAN,
+  ChainId.TESTNET,
 ]
 export const NETWORK_CHAIN_ID: number = parseInt(process.env.REACT_APP_CHAIN_ID ?? '1')
 
@@ -35,7 +31,7 @@ if (typeof NETWORK_URL === 'undefined') {
 }
 export const network = new NetworkConnector({
   urls: NETWORK_URLS,
-  defaultChainId: 1140,
+  defaultChainId: ChainId.TESTNET,
 })
 
 let networkLibrary: Web3Provider | undefined
@@ -49,7 +45,7 @@ export const injected = new InjectedConnector({
 
 export const walletconnect = new WalletConnectConnector({
   // rpc: NETWORK_URLS,
-  rpc: { [ChainId.GALOIS]: `https://galois.maiziqianbao.net/rpc` },
+  rpc: { [ChainId.TESTNET]: `https://galois.maiziqianbao.net/rpc` },
   bridge: 'https://bridge.walletconnect.org',
   qrcode: true,
   pollingInterval: 15000

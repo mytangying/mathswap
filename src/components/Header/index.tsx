@@ -1,25 +1,23 @@
-import { ChainId } from '@uniswap/sdk'
+import { ChainId } from 'mathswap-sdk'
 import React from 'react'
 import { isMobile } from 'react-device-detect'
 import { Text } from 'rebass'
 
 import styled from 'styled-components'
 
-import Logo from '../../assets/svg/logo.svg'
-import LogoDark from '../../assets/svg/logo_white.svg'
-import Wordmark from '../../assets/svg/wordmark.svg'
-import WordmarkDark from '../../assets/svg/wordmark_white.svg'
+import Wordmark from '../../assets/svg/wordmark_white.png'
+// import WordmarkDark from '../../assets/svg/wordmark_white.png'
 import { useActiveWeb3React } from '../../hooks'
-import { useDarkModeManager } from '../../state/user/hooks'
+// import { useDarkModeManager } from '../../state/user/hooks'
 import { useETHBalances } from '../../state/wallet/hooks'
 
-import { YellowCard } from '../Card'
+// import { YellowCard } from '../Card'
 import Settings from '../Settings'
 import Menu from '../Menu'
 
-import Row, { RowBetween } from '../Row'
+import { RowBetween } from '../Row'
 import Web3Status from '../Web3Status'
-import VersionSwitch from './VersionSwitch'
+// import VersionSwitch from './VersionSwitch'
 
 const HeaderFrame = styled.div`
   display: flex;
@@ -30,10 +28,11 @@ const HeaderFrame = styled.div`
   top: 0;
   position: absolute;
   z-index: 2;
-  ${({ theme }) => theme.mediaWidth.upToExtraSmall`
-    padding: 12px 0 0 0;
-    width: calc(100%);
+  background: ${({ theme }) => theme.primary1};
+  padding: 16px 12px 16px 24px;
+  ${({ theme }) => theme.mediaWidth.upToSmall`
     position: relative;
+    padding: 16px;
   `};
 `
 
@@ -45,29 +44,8 @@ const HeaderElement = styled.div`
 const HeaderElementWrap = styled.div`
   display: flex;
   align-items: center;
-
-  ${({ theme }) => theme.mediaWidth.upToSmall`
-    margin-top: 0.5rem;
-`};
 `
 
-const Title = styled.a`
-  display: flex;
-  align-items: center;
-  pointer-events: auto;
-
-  :hover {
-    cursor: pointer;
-  }
-`
-
-const TitleText = styled(Row)`
-  width: fit-content;
-  white-space: nowrap;
-  ${({ theme }) => theme.mediaWidth.upToExtraSmall`
-    display: none;
-  `};
-`
 
 const AccountElement = styled.div<{ active: boolean }>`
   display: flex;
@@ -85,28 +63,16 @@ const AccountElement = styled.div<{ active: boolean }>`
 
 const TestnetWrapper = styled.div`
   white-space: nowrap;
-  width: fit-content;
-  margin-left: 10px;
   pointer-events: auto;
 `
 
-const NetworkCard = styled(YellowCard)`
-  width: fit-content;
-  margin-right: 10px;
-  border-radius: 12px;
+const NetworkCard = styled.div`
   padding: 8px 12px;
-`
-
-const UniIcon = styled.div`
-  transition: transform 0.3s ease;
-  :hover {
-    transform: rotate(-5deg);
-  }
+  color: #fff;
   ${({ theme }) => theme.mediaWidth.upToSmall`
-    img {
-      width: 4.5rem;
-    }
-  `};
+    color: #000;
+    padding-left:0;
+  `}
 `
 
 const HeaderControls = styled.div`
@@ -115,8 +81,13 @@ const HeaderControls = styled.div`
   align-items: center;
 
   ${({ theme }) => theme.mediaWidth.upToSmall`
-    flex-direction: column;
-    align-items: flex-end;
+    position:fixed;
+    left:0;
+    right:0;
+    bottom:0;
+    background:#fff;
+    padding: 16px;
+    justify-content: space-between;
   `};
 `
 
@@ -128,31 +99,26 @@ const BalanceText = styled(Text)`
 
 const NETWORK_LABELS: { [chainId in ChainId]: string | null } = {
   [ChainId.MAINNET]: null,
-  [ChainId.RINKEBY]: 'Rinkeby',
-  [ChainId.ROPSTEN]: 'Ropsten',
-  [ChainId.GÖRLI]: 'Görli',
-  [ChainId.KOVAN]: 'Kovan',
-  [ChainId.GALOIS]: 'Galois',
+  // [ChainId.RINKEBY]: 'Rinkeby',
+  // [ChainId.ROPSTEN]: 'Ropsten',
+  // [ChainId.GÖRLI]: 'Görli',
+  // [ChainId.KOVAN]: 'Kovan',
+  [ChainId.TESTNET]: 'Galois',
 }
 
 export default function Header() {
   const { account, chainId } = useActiveWeb3React()
 
   const userEthBalance = useETHBalances(account ? [account] : [])?.[account ?? '']
-  const [isDark] = useDarkModeManager()
+  // const [isDark] = useDarkModeManager()
 
   return (
     <HeaderFrame>
-      <RowBetween style={{ alignItems: 'flex-start' }} padding="1rem 1rem 0 1rem">
+      <RowBetween>
         <HeaderElement>
-          <Title href=".">
-            <UniIcon>
-              <img src={isDark ? LogoDark : Logo} alt="logo" />
-            </UniIcon>
-            <TitleText>
-              <img style={{ marginLeft: '4px', marginTop: '4px' }} src={isDark ? WordmarkDark : Wordmark} alt="logo" />
-            </TitleText>
-          </Title>
+          <a href="https://explorer.mathchain.org/" target="_blank" rel="noopener noreferrer">
+            <img style={{height:'24px'}} src={Wordmark} alt="logo" />
+          </a>
         </HeaderElement>
         <HeaderControls>
           <HeaderElement>
@@ -169,7 +135,7 @@ export default function Header() {
             </AccountElement>
           </HeaderElement>
           <HeaderElementWrap>
-            <VersionSwitch />
+            {/* <VersionSwitch /> */}
             <Settings />
             <Menu />
           </HeaderElementWrap>
